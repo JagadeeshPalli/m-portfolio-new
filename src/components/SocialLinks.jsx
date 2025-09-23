@@ -41,7 +41,7 @@ const SocialLinks = () => {
                     Resume <BsFillPersonLinesFill size={25} />
                 </>
             ),
-            href: "./JAGADEESH PALLI-SE-M.pdf",
+            href: "./JAGADEESH PALLI-SE.pdf",
             style: "rounded-br-md",
             download: true
         },

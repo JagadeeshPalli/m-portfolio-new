@@ -17,10 +17,19 @@ const About = () => {
                     <ol data-aos="fade-up" data-aos-delay="2000" data-aos-duration="2000" className="relative border-s border-blue-700 dark:border-blue-700 w-full mx-auto flex flex-col justify-center items-center">
                         <li className="mb-6 ms-6 px-5 lg:w-3/5 ">
                             <h3 className="flex pl-10 items-center mb-1 text-lg font-semibold text-gray-900 dark:text-white">
-                                Software Engineer - Azilen Technologies &nbsp;&nbsp;&nbsp;
+                                Software Engineer - New York State Department &nbsp;&nbsp;&nbsp;
                                 <span className="bg-blue-100 text-blue-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300 ms-3">Latest</span>
                             </h3>
-                            <time className="block pl-10 mb-2 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">Aug 2024 – Present</time>
+                            <time className="block pl-10 mb-2 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">May 2025 – Present</time>
+                            <p className="mb-4 pl-10 text-base font-normal text-gray-500 dark:text-gray-400">Implemented RESTful APIs and integrated front-end components using Angular, creating dynamic and user-friendly interfaces.
+Migrated on-premises applications to AWS, reducing operational costs by 18%.
+</p>
+                        </li>
+                        <li className="mb-6 ms-6 px-5 lg:w-3/5 ">
+                            <h3 className="flex pl-10 items-center mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+                                Software Engineer - Azilen Technologies &nbsp;&nbsp;&nbsp;
+                            </h3>
+                            <time className="block pl-10 mb-2 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">Aug 2024 – Apr 2025</time>
                             <p className="mb-4 pl-10 text-base font-normal text-gray-500 dark:text-gray-400">Implemented RESTful APIs, migrated applications to AWS, designed microservices, optimized database performance, and automated CI/CD pipelines.</p>
                         </li>
                         <li className="mb-6 ms-6 px-5 lg:w-3/5">
@@ -42,7 +51,7 @@ const About = () => {
                 </div>
                 <div data-aos="zoom-in" data-aos-duration="500" className='mb-32 fade-in flex mx-auto items-center justify-center hover:scale-105 duration-300 rounded bg-gradient-to-b from-cyan-500 to-blue-500 lg:w-1/5 md:w-1/5 w-2/4 h-10 text-center cursor-pointer mt-10 gap-2'>
                     <AiOutlineCloudDownload />
-                    <a href="./JAGADEESH-PALLI-SE-M.pdf" download>Download CV</a>
+                    <a href="./JAGADEESH PALLI-SE.pdf" download>Download CV</a>
                 </div>
             </div>
         </div>
