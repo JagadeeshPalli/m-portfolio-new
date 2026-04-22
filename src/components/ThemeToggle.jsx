@@ -119,7 +119,7 @@ const ThemeToggle = () => {
   };
 
   return (
-    <div className="fixed top-5 right-5 z-[9999] flex items-center">
+    <div className="fixed top-[10px] right-4 z-[9999] flex items-center">
       <Tooltip visible={hovered} isDark={isDark} />
 
       <motion.button

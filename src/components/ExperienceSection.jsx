@@ -90,52 +90,108 @@ const Pill = ({ label, cyan }) => (
 );
 
 /* ══════════════════════════════════════════════════════
-   EXPERIENCE CARD
-   alternates left/right on desktop
+   LEFT-ANCHORED TIMELINE LINE WITH TRAVELING PULSE
 ══════════════════════════════════════════════════════ */
-const ExpCard = ({ exp, index, cyan, amber, isLeft }) => {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+const TimelineLine = ({ cyan, inView }) => (
+  <div
+    className="hidden md:block absolute top-0 bottom-0"
+    style={{ left: 20, width: 2 }}
+  >
+    {/* Gradient line that grows from the top on scroll entry */}
+    <motion.div
+      style={{
+        position:         'absolute',
+        inset:            0,
+        background:       `linear-gradient(180deg, ${cyan}cc 0%, ${cyan}66 60%, ${cyan}22 100%)`,
+        transformOrigin:  'top',
+      }}
+      initial={{ scaleY: 0 }}
+      animate={inView ? { scaleY: 1 } : {}}
+      transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
+    />
+
+    {/* Traveling glowing pulse — appears once line is revealed */}
+    {inView && (
+      <motion.div
+        style={{
+          position:   'absolute',
+          left:       -3,
+          right:      -3,
+          height:     90,
+          background: `linear-gradient(180deg, transparent 0%, ${cyan} 50%, transparent 100%)`,
+          boxShadow:  `0 0 10px ${cyan}, 0 0 20px ${cyan}66`,
+          filter:     'blur(1px)',
+        }}
+        animate={{ top: ['-90px', 'calc(100% + 90px)'] }}
+        transition={{
+          duration:    2.6,
+          repeat:      Infinity,
+          ease:        'linear',
+          delay:       1.8,
+          repeatDelay: 0.4,
+        }}
+      />
+    )}
+  </div>
+);
+
+/* ══════════════════════════════════════════════════════
+   EXPERIENCE CARD (left-anchored layout)
+══════════════════════════════════════════════════════ */
+const ExpCard = ({ exp, cyan, amber }) => {
+  const { ref, inView } = useInView({ threshold: 0.15, triggerOnce: true });
   const accent = exp.badgeColor === '#ff9500' ? amber : cyan;
 
   return (
-    <div
-      ref={ref}
-      className={`relative flex w-full mb-12
-        ${isLeft ? 'justify-start' : 'justify-end'}
-        lg:w-1/2 ${isLeft ? 'lg:pr-10' : 'lg:pl-10 lg:ml-auto'}`}
-    >
-      {/* connector dot on the timeline */}
+    <div ref={ref} className="relative mb-8 last:mb-0">
+
+      {/* Connector dot on the timeline — desktop only */}
       <motion.div
-        initial={{ scale: 0 }}
-        animate={inView ? { scale: 1 } : {}}
-        transition={{ duration: 0.35, delay: 0.1, type: 'spring', stiffness: 300 }}
-        className="hidden lg:block absolute top-6 z-10"
+        className="hidden md:block absolute z-10"
         style={{
-          [isLeft ? 'right' : 'left']: -11,
-          width: 20, height: 20,
+          left:         -40,
+          top:          24,
+          width:        16,
+          height:       16,
           borderRadius: '50%',
-          background: accent,
-          boxShadow: `0 0 12px ${accent}80, 0 0 24px ${accent}40`,
+          background:   accent,
+          boxShadow:    `0 0 12px ${accent}99, 0 0 24px ${accent}44`,
+          border:       '2px solid var(--bg-primary)',
+        }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={inView ? { scale: 1, opacity: 1 } : {}}
+        transition={{ duration: 0.35, delay: 0.15, type: 'spring', stiffness: 300 }}
+      />
+
+      {/* Thin horizontal connector from dot to card edge */}
+      <div
+        className="hidden md:block absolute"
+        style={{
+          left:       -23,
+          top:        31,
+          width:      23,
+          height:     1,
+          background: `linear-gradient(90deg, ${accent}60, ${accent}20)`,
         }}
       />
 
-      {/* card */}
+      {/* Card */}
       <motion.div
-        initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
+        initial={{ opacity: 0, x: 40 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full p-4 md:p-6 rounded-2xl relative overflow-hidden"
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full p-4 md:p-6 rounded-2xl overflow-hidden"
         style={{
-          background:     'var(--glass-bg)',
-          border:         `1px solid var(--glass-border)`,
-          backdropFilter: 'blur(14px)',
+          background:           'var(--glass-bg)',
+          border:               '1px solid var(--glass-border)',
+          backdropFilter:       'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
-          boxShadow:      '0 8px 32px rgba(0,0,0,0.25)',
+          boxShadow:            '0 8px 32px rgba(0,0,0,0.25)',
         }}
         whileHover={{
           borderColor: accent,
           boxShadow:   `0 8px 32px rgba(0,0,0,0.3), 0 0 24px ${accent}25`,
-          y: -3,
+          y:           -3,
         }}
         transition={{ duration: 0.22 }}
       >
@@ -148,13 +204,22 @@ const ExpCard = ({ exp, index, cyan, amber, isLeft }) => {
         {/* header */}
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div>
-            <h3 className="font-display font-bold text-base" style={{ color: 'var(--text-primary)' }}>
+            <h3
+              className="font-display font-bold text-base"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {exp.role}
             </h3>
-            <p className="font-body font-semibold text-sm mt-0.5" style={{ color: accent }}>
+            <p
+              className="font-body font-semibold text-sm mt-0.5"
+              style={{ color: accent }}
+            >
               {exp.company}
             </p>
-            <p className="font-code text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="font-code text-[11px] mt-0.5"
+              style={{ color: 'var(--text-muted)' }}
+            >
               {exp.location}
             </p>
           </div>
@@ -179,7 +244,11 @@ const ExpCard = ({ exp, index, cyan, amber, isLeft }) => {
         {/* bullet points */}
         <ul className="space-y-2 mb-5">
           {exp.points.map((pt, i) => (
-            <li key={i} className="flex gap-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <li
+              key={i}
+              className="flex gap-2.5 text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               <span style={{ color: accent, flexShrink: 0, marginTop: 3 }}>▸</span>
               <span>{pt}</span>
             </li>
@@ -194,23 +263,6 @@ const ExpCard = ({ exp, index, cyan, amber, isLeft }) => {
     </div>
   );
 };
-
-/* ══════════════════════════════════════════════════════
-   ANIMATED SVG TIMELINE LINE
-══════════════════════════════════════════════════════ */
-const TimelineLine = ({ cyan, inView }) => (
-  <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-px overflow-hidden">
-    <motion.div
-      className="w-full origin-top"
-      style={{ background: `linear-gradient(180deg,${cyan},${cyan}88,${cyan}22)` }}
-      initial={{ scaleY: 0 }}
-      animate={inView ? { scaleY: 1 } : {}}
-      transition={{ duration: 1.6, ease: 'easeInOut', delay: 0.2 }}
-    >
-      <div style={{ height: EXPERIENCE.length * 280 }} />
-    </motion.div>
-  </div>
-);
 
 /* ══════════════════════════════════════════════════════
    EXPERIENCE SECTION
@@ -238,13 +290,22 @@ const ExperienceSection = () => {
           backgroundSize: '80px 80px',
         }}
       />
-      <div className="absolute top-6 right-6 pointer-events-none select-none"
-           style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
-                    fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+      <div
+        className="absolute top-6 right-6 pointer-events-none select-none"
+        style={{
+          fontFamily: 'Orbitron,sans-serif',
+          fontSize:   'clamp(5rem,16vw,12rem)',
+          fontWeight: 900,
+          color:      cyan,
+          opacity:    0.04,
+          lineHeight: 1,
+          userSelect: 'none',
+        }}
+      >
         04
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12">
+      <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-12">
 
         {/* heading */}
         <motion.div
@@ -257,27 +318,24 @@ const ExperienceSection = () => {
           <h2 className="section-heading">
             Work Experience<span style={{ color: cyan }}>.</span>
           </h2>
-          <div className="mt-4 mx-auto h-px w-24"
-            style={{ background: `linear-gradient(90deg,transparent,${cyan},transparent)` }} />
+          <div
+            className="mt-4 mx-auto h-px w-24"
+            style={{ background: `linear-gradient(90deg,transparent,${cyan},transparent)` }}
+          />
         </motion.div>
 
-        {/* timeline */}
-        <div className="relative">
+        {/* left-anchored timeline */}
+        <div className="relative md:pl-14">
           <TimelineLine cyan={cyan} inView={inView} />
 
-          {/* cards — zigzag left/right on desktop, stacked on mobile */}
-          <div className="relative flex flex-col lg:block">
-            {EXPERIENCE.map((exp, i) => (
-              <ExpCard
-                key={exp.id}
-                exp={exp}
-                index={i}
-                cyan={cyan}
-                amber={amber}
-                isLeft={i % 2 === 0}
-              />
-            ))}
-          </div>
+          {EXPERIENCE.map((exp) => (
+            <ExpCard
+              key={exp.id}
+              exp={exp}
+              cyan={cyan}
+              amber={amber}
+            />
+          ))}
         </div>
 
       </div>

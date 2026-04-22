@@ -116,7 +116,7 @@ const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
         glarePosition="all"
         scale={1.02}
         transitionSpeed={600}
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ transformStyle: 'preserve-3d', height: '100%' }}
       >
         <div
           className="relative rounded-2xl overflow-hidden h-full flex flex-col"

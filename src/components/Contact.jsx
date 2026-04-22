@@ -169,14 +169,20 @@ const Contact = () => {
             <motion.div {...fadeUp(0.1)} className="flex flex-col gap-5">
 
               <div
-                className="p-6 rounded-2xl"
+                className="relative p-6 rounded-2xl"
                 style={{
                   background:     'var(--glass-bg)',
-                  border:         `1px solid var(--glass-border)`,
+                  border:         `1.5px solid ${cyan}55`,
                   backdropFilter: 'blur(14px)',
                   WebkitBackdropFilter: 'blur(14px)',
+                  boxShadow:      `0 4px 24px rgba(0,0,0,0.2), 0 0 24px ${cyan}12, inset 0 1px 0 ${cyan}18`,
                 }}
               >
+                {/* top accent bar */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl pointer-events-none"
+                  style={{ background: `linear-gradient(90deg,${amber},transparent)` }}
+                />
                 <p
                   className="font-body text-sm leading-relaxed mb-6"
                   style={{ color: 'var(--text-secondary)' }}
@@ -251,12 +257,13 @@ const Contact = () => {
             <motion.div {...fadeUp(0.2)}>
               <form
                 onSubmit={handleSubmit}
-                className="p-6 rounded-2xl flex flex-col gap-4"
+                className="relative p-6 rounded-2xl flex flex-col gap-4"
                 style={{
                   background:     'var(--glass-bg)',
-                  border:         `1px solid var(--glass-border)`,
+                  border:         `1.5px solid ${cyan}55`,
                   backdropFilter: 'blur(14px)',
                   WebkitBackdropFilter: 'blur(14px)',
+                  boxShadow:      `0 4px 24px rgba(0,0,0,0.2), 0 0 24px ${cyan}12, inset 0 1px 0 ${cyan}18`,
                 }}
               >
                 {/* top accent bar */}
