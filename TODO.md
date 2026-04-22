@@ -22,12 +22,13 @@ Worktree path: `E:\Consulting\my-portfolio-m\.claude\worktrees\dreamy-elbakyan-5
 - [x] Session 6  — About section (3D Earth + India pin + about text)
 - [x] Session 7  — Skills section (floating bubbles — NEEDS REDESIGN, see below)
 - [ ] Session 8  — Experience timeline (SVG line draw + glassmorphism cards)
-- [ ] Session 9  — Projects section (magnetic tilt cards + staggered scroll)
-- [ ] Session 10 — Contact / Footer (glitch effect + social links)
-- [ ] Session 11 — Connect all sections with GSAP scroll transitions
-- [ ] Session 12 — Mobile responsiveness pass
-- [ ] Session 13 — Theme audit (verify every element adapts to both themes)
-- [ ] Session 14 — Performance optimization + Netlify deploy config
+- [x] Session 9  — Projects section (tilt cards + filter tabs) + Navbar redesign
+- [x] Session 10 — Contact / Footer (glitch heading + social links + footer)
+- [ ] Session 11 — Certifications section (Azure AI, Oracle certs with badge effects)
+- [ ] Session 12 — Connect all sections with GSAP scroll transitions
+- [ ] Session 13 — Mobile responsiveness pass
+- [ ] Session 14 — Theme audit (verify every element adapts to both themes)
+- [ ] Session 15 — Hero flicker fix + performance optimization + Netlify deploy config
 
 ---
 
@@ -78,16 +79,20 @@ Worktree path: `E:\Consulting\my-portfolio-m\.claude\worktrees\dreamy-elbakyan-5
 
 ## 🔴 STRICT ISSUES — MUST FIX BEFORE DEPLOY
 
-### Hero Section — Flickering + Background Theme Bug
-- **Page flickers on initial load**: Content disappears briefly then reappears.
-  The hero background (`#0a0a0a` hardcoded) ignores the CSS variable system.
+### Hero Section — Flickering + Background Theme Bug (USER CONFIRMED STILL HAPPENING)
+- **Flicker #1 — when name appears**: The page goes completely blank right as
+  "JAGADEESH PALLI" types in. Likely cause: the `textShadow` animation array
+  in the name's `motion.div` triggers a re-render that briefly unmounts other
+  elements. Fix: move the pulsing glow to a CSS animation class instead.
+- **Flicker #2 — after boot sequence completes**: Page goes blank again after
+  all lines finish typing and before CTAs appear. The `phase` state transition
+  from 'boot' → 'complete' likely causes a full re-render. Fix: avoid state
+  that unmounts/remounts the particle canvas.
 - **Hero background does NOT change with theme toggle**: HeroSection.jsx uses
   hardcoded `background: isDark ? '#0a0a0a' : '#0b0b28'` — both are near-black.
-  Light theme hero must use a light background (white/cream `#f8f8f8` or a
-  soft gradient) matching the rest of the site.
-- Fix: replace the hardcoded hex with `background: 'var(--bg-primary)'` in
-  HeroSection.jsx section tag, and ensure particles re-key correctly on theme
-  change so there is no blank flash.
+  Light theme hero must use `background: 'var(--bg-primary)'` so it matches the
+  rest of the site in light mode.
+- **PRIORITY**: Fix ALL THREE before deploy. These are the most visible bugs.
 
 ---
 

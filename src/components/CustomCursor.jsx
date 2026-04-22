@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
-const TRAIL_LEN = 6;
+const TRAIL_LEN = 7;
 
 const CustomCursor = () => {
   const { isDark } = useTheme();
@@ -25,13 +25,9 @@ const CustomCursor = () => {
   const rafId         = useRef(null);
   const dirtyTrail    = useRef(false);
 
-  /* main cursor — instant tracking */
+  /* single element — instant tracking, no follower */
   const dotX = useMotionValue(-200);
   const dotY = useMotionValue(-200);
-
-  /* follower — very tight spring so it feels nearly instant, just slight weight */
-  const followX = useSpring(dotX, { stiffness: 900, damping: 50, mass: 0.5 });
-  const followY = useSpring(dotY, { stiffness: 900, damping: 50, mass: 0.5 });
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -121,35 +117,52 @@ const CustomCursor = () => {
 
   if (isMobile) return null;
 
+  const accent = isHovering ? amber : cyan;
+  const dotSize = isHovering ? 10 : 7;
+
   return (
     <>
-      {/* ── Diamond trail — small fading rotated squares ── */}
+      {/* CSS keyframes for the ping ring */}
+      <style>{`
+        @keyframes cursorPing {
+          0%   { transform: scale(1);   opacity: 0.55; }
+          80%  { transform: scale(2.8); opacity: 0;    }
+          100% { transform: scale(2.8); opacity: 0;    }
+        }
+        @keyframes cursorPingHover {
+          0%   { transform: scale(1);   opacity: 0.7; }
+          80%  { transform: scale(2.4); opacity: 0;   }
+          100% { transform: scale(2.4); opacity: 0;   }
+        }
+      `}</style>
+
+      {/* ── Comet trail — tiny fading dots ── */}
       {trail.map((pt, i) => {
         const t    = (i + 1) / trail.length;
-        const size = Math.max(2, t * 6);
+        const size = Math.max(2, t * 5);
         return (
           <div
             key={pt.id}
-            className="fixed top-0 left-0 pointer-events-none"
+            className="fixed top-0 left-0 rounded-full pointer-events-none"
             style={{
-              zIndex:    9995,
-              width:     size,
-              height:    size,
-              transform: `translate(${pt.x - size / 2}px, ${pt.y - size / 2}px) rotate(45deg)`,
-              background: cyan,
-              opacity:   t * 0.3,
+              zIndex:     9995,
+              width:      size,
+              height:     size,
+              transform:  `translate(${pt.x - size / 2}px, ${pt.y - size / 2}px)`,
+              background: accent,
+              opacity:    t * 0.28,
             }}
           />
         );
       })}
 
-      {/* ── Scroll burst ── */}
+      {/* ── Scroll burst particles ── */}
       <AnimatePresence>
         {bursts.map(b => (
           <motion.div
             key={b.id}
-            className="fixed top-0 left-0 pointer-events-none"
-            style={{ zIndex: 9995, width: 4, height: 4, background: cyan, rotate: 45 }}
+            className="fixed top-0 left-0 pointer-events-none rounded-full"
+            style={{ zIndex: 9995, width: 4, height: 4, background: cyan }}
             initial={{ x: b.ox - 2, y: b.oy - 2, opacity: 0.85, scale: 1 }}
             animate={{ x: b.ox + b.dx, y: b.oy + b.dy, opacity: 0, scale: 0 }}
             exit={{}}
@@ -158,36 +171,7 @@ const CustomCursor = () => {
         ))}
       </AnimatePresence>
 
-      {/* ── Follower diamond — tight spring, barely any lag ── */}
-      <motion.div
-        className="fixed top-0 left-0 pointer-events-none"
-        style={{
-          x:            followX,
-          y:            followY,
-          translateX:   '-50%',
-          translateY:   '-50%',
-          zIndex:       9997,
-          rotate:       45,
-        }}
-        animate={{
-          width:      isHovering ? 28 : 18,
-          height:     isHovering ? 28 : 18,
-          opacity:    isVisible  ? 1  : 0,
-        }}
-        transition={{ width: { duration: 0.18 }, height: { duration: 0.18 }, opacity: { duration: 0.15 } }}
-      >
-        <div
-          className="w-full h-full"
-          style={{
-            border:     `1.5px solid ${cyan}`,
-            background: isHovering ? `${cyan}18` : 'transparent',
-            boxShadow:  `0 0 ${isHovering ? 10 : 5}px ${cyan}${isHovering ? '60' : '35'}`,
-            transition: 'background 0.18s, box-shadow 0.18s',
-          }}
-        />
-      </motion.div>
-
-      {/* ── Main cursor diamond — instant, filled, bright ── */}
+      {/* ── Single cursor element: solid dot + CSS ping ring ── */}
       <motion.div
         className="fixed top-0 left-0 pointer-events-none"
         style={{
@@ -196,43 +180,45 @@ const CustomCursor = () => {
           translateX: '-50%',
           translateY: '-50%',
           zIndex:     9999,
-          rotate:     45,
-          background: isHovering ? 'transparent' : cyan,
-          boxShadow:  isHovering
-            ? 'none'
-            : `0 0 8px ${cyan}, 0 0 16px ${cyan}50`,
         }}
-        animate={{
-          width:   isHovering ? 0 : 6,
-          height:  isHovering ? 0 : 6,
-          opacity: isVisible  ? 1 : 0,
-        }}
+        animate={{ opacity: isVisible ? 1 : 0 }}
         transition={{ duration: 0.15 }}
-      />
+      >
+        {/* ping ring — animates outward and fades, stays centered */}
+        <motion.span
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            background:  accent,
+            top:         '50%',
+            left:        '50%',
+            marginTop:   -(dotSize / 2),
+            marginLeft:  -(dotSize / 2),
+            animation:   isHovering
+              ? 'cursorPingHover 1s ease-out infinite'
+              : 'cursorPing 1.6s ease-out infinite',
+          }}
+          animate={{ width: dotSize, height: dotSize }}
+          transition={{ duration: 0.18 }}
+        />
 
-      {/* ── Hover label shown next to cursor on data-cursor elements ── */}
-      <AnimatePresence>
-        {isHovering && (
-          <motion.div
-            className="fixed pointer-events-none font-code text-[10px] tracking-widest uppercase"
-            style={{
-              x:          dotX,
-              y:          dotY,
-              zIndex:     9998,
-              color:      amber,
-              translateX: '20px',
-              translateY: '-50%',
-              textShadow: `0 0 8px ${amber}`,
-            }}
-            initial={{ opacity: 0, x: 14 }}
-            animate={{ opacity: 1, x: 20 }}
-            exit={{ opacity: 0, x: 14 }}
-            transition={{ duration: 0.18 }}
-          >
-            {document.querySelector(':hover[data-cursor]')?.dataset.cursor || ''}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* solid dot — sharp, always on top of the ring */}
+        <motion.span
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            background:  accent,
+            boxShadow:   `0 0 ${isHovering ? 10 : 6}px ${accent}`,
+            top:         '50%',
+            left:        '50%',
+          }}
+          animate={{
+            width:      dotSize,
+            height:     dotSize,
+            marginTop:  -(dotSize / 2),
+            marginLeft: -(dotSize / 2),
+          }}
+          transition={{ duration: 0.18 }}
+        />
+      </motion.div>
     </>
   );
 };

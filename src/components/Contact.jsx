@@ -353,8 +353,10 @@ const Contact = () => {
       <footer
         className="relative w-full py-10 overflow-hidden"
         style={{
-          background:   isDark ? '#0d1128' : '#e0e0ee',
-          borderTop:    `1px solid ${cyan}35`,
+          background: isDark
+            ? 'linear-gradient(180deg, #131438 0%, #0d0d22 100%)'
+            : 'linear-gradient(180deg, #d4d4e8 0%, #c8c8e0 100%)',
+          borderTop: `1px solid ${cyan}45`,
         }}
       >
         <div className="max-w-5xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -365,12 +367,12 @@ const Contact = () => {
             >
               JP
             </span>
-            <span className="font-body text-sm" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-body text-sm font-medium" style={{ color: isDark ? '#c0c0dd' : '#2a2a4a' }}>
               Jagadeesh Palli
             </span>
           </div>
 
-          <p className="font-code text-[11px] text-center" style={{ color: 'var(--text-muted)' }}>
+          <p className="font-code text-[11px] text-center" style={{ color: isDark ? '#8888aa' : '#4a4a6a' }}>
             Designed &amp; Built with passion · &copy; {new Date().getFullYear()}
           </p>
 
@@ -386,7 +388,7 @@ const Contact = () => {
                 target={href.startsWith('http') ? '_blank' : undefined}
                 rel={href.startsWith('http') ? 'noreferrer' : undefined}
                 className="p-2 rounded-lg"
-                style={{ color: 'var(--text-muted)' }}
+                style={{ color: isDark ? '#8888aa' : '#4a4a6a' }}
                 whileHover={{ color: cyan, scale: 1.15 }}
                 transition={{ duration: 0.16 }}
               >
