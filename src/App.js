@@ -1,11 +1,13 @@
 import React from 'react';
 import './App.css';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider }  from './context/ThemeContext';
+import { LenisProvider }  from './context/LenisContext';
 
-import ThemeToggle  from './components/ThemeToggle';
-import CustomCursor from './components/CustomCursor';
+import CustomCursor  from './components/CustomCursor';
+import ThemeToggle   from './components/ThemeToggle';
+import ScrollProgress from './components/ScrollProgress';
 
-/* ── existing sections (kept intact while redesign builds) ── */
+/* ── existing sections (replaced section-by-section in later sessions) ── */
 import NavBar      from './components/NavBar';
 import Home        from './components/Home';
 import SocialLinks from './components/SocialLinks';
@@ -17,17 +19,25 @@ import Contact     from './components/Contact';
 function App() {
   return (
     <ThemeProvider>
-      <div className="app-wrapper scanlines">
-        <CustomCursor />
-        <ThemeToggle />
-        <NavBar />
-        <Home />
-        <SocialLinks />
-        <About />
-        <Projects />
-        <Experience />
-        <Contact />
-      </div>
+      <LenisProvider>
+        <div className="app-wrapper scanlines">
+
+          {/* ── global overlays ── */}
+          <CustomCursor />
+          <ThemeToggle />
+          <ScrollProgress />
+
+          {/* ── page sections ── */}
+          <NavBar />
+          <Home />
+          <SocialLinks />
+          <About />
+          <Projects />
+          <Experience />
+          <Contact />
+
+        </div>
+      </LenisProvider>
     </ThemeProvider>
   );
 }
