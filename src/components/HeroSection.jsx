@@ -322,7 +322,7 @@ const HeroSection = () => {
                 <IconBtn href="https://www.linkedin.com/in/jagadeesh-palli-cs1326/">
                   <BsLinkedin size={19} />
                 </IconBtn>
-                <CyberBtn href="/JAGADEESH PALLI-SE.pdf" accent="var(--text-secondary)" download>
+                <CyberBtn href="/JAGADEESH PALLI-SE1.pdf" accent="var(--text-secondary)" download>
                   <AiOutlineCloudDownload size={17} />
                   Resume
                 </CyberBtn>

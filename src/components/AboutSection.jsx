@@ -236,7 +236,7 @@ const AboutSection = () => {
             </div>
 
             <motion.a
-              href="/JAGADEESH PALLI-SE.pdf" download
+              href="/JAGADEESH PALLI-SE1.pdf" download
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-body font-semibold text-sm tracking-wide"
               style={{ background: `${cyan}12`, border: `1px solid ${cyan}50`, color: cyan }}
               whileHover={{ scale: 1.04, boxShadow: `0 0 20px ${cyan}35` }}

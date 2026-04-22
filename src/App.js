@@ -11,7 +11,8 @@ import ScrollProgress from './components/ScrollProgress';
 import HeroSection       from './components/HeroSection';
 import AboutSection      from './components/AboutSection';
 import SkillsSection     from './components/SkillsSection';
-import ExperienceSection from './components/ExperienceSection';
+import ExperienceSection      from './components/ExperienceSection';
+import CertificationsSection  from './components/CertificationsSection';
 
 /* ── sections still pending redesign ── */
 import Navbar   from './components/Navbar';
@@ -35,6 +36,7 @@ function App() {
           <AboutSection />
           <SkillsSection />
           <ExperienceSection />
+          <CertificationsSection />
           <Projects />
           <Contact />
 
