@@ -2,7 +2,8 @@ import React from 'react';
 import './App.css';
 import { ThemeProvider } from './context/ThemeContext';
 
-import ThemeToggle from './components/ThemeToggle';
+import ThemeToggle  from './components/ThemeToggle';
+import CustomCursor from './components/CustomCursor';
 
 /* ── existing sections (kept intact while redesign builds) ── */
 import NavBar      from './components/NavBar';
@@ -17,6 +18,7 @@ function App() {
   return (
     <ThemeProvider>
       <div className="app-wrapper scanlines">
+        <CustomCursor />
         <ThemeToggle />
         <NavBar />
         <Home />
