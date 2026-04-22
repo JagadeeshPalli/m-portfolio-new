@@ -64,8 +64,8 @@ const ScrollProgress = () => {
 
       {/* ── Scroll percentage pill — fades in once scrolled a bit ── */}
       <motion.div
-        className="fixed bottom-6 right-6 z-[9990] font-code text-xs tracking-widest
-                   px-3 py-1.5 rounded-full"
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[9990] font-code text-xs tracking-widest
+                   px-2 py-1 md:px-3 md:py-1.5 rounded-full hidden sm:block"
         style={{
           background:   'var(--glass-bg)',
           border:       '1px solid var(--glass-border)',

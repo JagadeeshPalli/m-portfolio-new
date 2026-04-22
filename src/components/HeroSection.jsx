@@ -186,9 +186,9 @@ const HeroSection = () => {
 
       {/* ── Corner accent lines ── */}
       {['tl','tr','bl','br'].map(c => (
-        <div key={c} className={`absolute z-[2] pointer-events-none w-16 h-16
-          ${c.includes('t') ? 'top-6' : 'bottom-6'}
-          ${c.includes('l') ? 'left-6' : 'right-6'}`}
+        <div key={c} className={`absolute z-[2] pointer-events-none hidden sm:block w-10 h-10 md:w-16 md:h-16
+          ${c.includes('t') ? 'top-4 md:top-6' : 'bottom-4 md:bottom-6'}
+          ${c.includes('l') ? 'left-4 md:left-6' : 'right-4 md:right-6'}`}
           style={{
             borderTop:    c.includes('t') ? `1px solid ${cyan}55` : 'none',
             borderBottom: c.includes('b') ? `1px solid ${cyan}55` : 'none',
@@ -199,7 +199,7 @@ const HeroSection = () => {
       ))}
 
       {/* ── Main terminal content ── */}
-      <div className="relative z-[3] w-full max-w-3xl mx-auto px-6 md:px-10 pt-24 pb-20">
+      <div className="relative z-[3] w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-10 pt-20 sm:pt-24 pb-16 sm:pb-20">
 
         {/* Boot progress bar */}
         <AnimatePresence>

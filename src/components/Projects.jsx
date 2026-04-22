@@ -143,7 +143,7 @@ const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
           />
 
           {/* image */}
-          <div className="relative overflow-hidden" style={{ height: 200 }}>
+          <div className="relative overflow-hidden" style={{ height: 'clamp(140px, 40vw, 200px)' }}>
             <motion.img
               src={project.image}
               alt={project.title}
@@ -205,7 +205,7 @@ const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
             </div>
 
             {/* action buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <motion.a
                 href={project.demo}
                 target="_blank"

@@ -364,7 +364,7 @@ const Contact = () => {
           borderTop: `1px solid ${cyan}45`,
         }}
       >
-        <div className="max-w-5xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 md:px-12 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
             <span
               className="font-display font-black text-base tracking-widest"

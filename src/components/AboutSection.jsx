@@ -233,7 +233,7 @@ const AboutSection = () => {
         </motion.div>
 
         {/* two-column */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-14 items-center">
 
           {/* LEFT — text */}
           <motion.div
@@ -280,7 +280,7 @@ const AboutSection = () => {
           <motion.div
             variants={fR} initial="hidden" animate={inView ? 'show' : 'hidden'}
             transition={{ ...tx, delay: 0.2 }}
-            className="relative w-full" style={{ height: 420 }}
+            className="relative w-full" style={{ height: 'clamp(260px, 50vw, 420px)' }}
           >
             {/* glow halo */}
             <div

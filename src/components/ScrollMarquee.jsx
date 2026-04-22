@@ -70,9 +70,9 @@ const ScrollMarquee = () => {
       }}
     >
       {/* left + right gradient fade edges */}
-      <div className="absolute inset-y-0 left-0 w-24 pointer-events-none z-10"
+      <div className="absolute inset-y-0 left-0 w-12 md:w-24 pointer-events-none z-10"
            style={{ background: `linear-gradient(90deg, var(--bg-primary), transparent)` }} />
-      <div className="absolute inset-y-0 right-0 w-24 pointer-events-none z-10"
+      <div className="absolute inset-y-0 right-0 w-12 md:w-24 pointer-events-none z-10"
            style={{ background: `linear-gradient(270deg, var(--bg-primary), transparent)` }} />
 
       {/* ── Row 1 — tech icons, moves LEFT ── */}

@@ -124,7 +124,7 @@ const ExpCard = ({ exp, index, cyan, amber, isLeft }) => {
         initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full p-6 rounded-2xl relative overflow-hidden"
+        className="w-full p-4 md:p-6 rounded-2xl relative overflow-hidden"
         style={{
           background:     'var(--glass-bg)',
           border:         `1px solid var(--glass-border)`,

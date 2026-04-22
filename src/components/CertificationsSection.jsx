@@ -65,7 +65,7 @@ const CERTS = [
    HEXAGONAL BADGE SHAPE
 ══════════════════════════════════════════════════════ */
 const HexBadge = ({ Icon, SecondIcon, brandColor, size = 72, animated = false }) => (
-  <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+  <div className="relative flex-shrink-0" style={{ width: size, height: size, minWidth: size }}>
     {/* hex background */}
     <svg
       viewBox="0 0 100 100"
@@ -145,7 +145,7 @@ const CertCard = ({ cert, index, inView, cyan }) => {
             Icon={cert.Icon}
             SecondIcon={cert.secondIcon}
             brandColor={accent}
-            size={68}
+            size={56}
             animated={hovered}
           />
 
@@ -327,7 +327,7 @@ const CertificationsSection = () => {
         </motion.div>
 
         {/* cert cards — 2-col desktop, 1-col mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {CERTS.map((cert, i) => (
             <CertCard
               key={cert.id}

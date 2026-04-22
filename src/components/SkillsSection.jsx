@@ -111,20 +111,20 @@ const SkillCard = ({ skill, index, inView, cardBg, borderColor }) => {
           borderColor: hovered ? skill.color : borderColor,
         }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
-        className="flex flex-col items-center justify-center gap-2.5
-                   px-3 py-5 rounded-xl cursor-default"
+        className="flex flex-col items-center justify-center gap-2 sm:gap-2.5
+                   px-2 sm:px-3 py-4 sm:py-5 rounded-xl cursor-default"
         style={{
           background:  cardBg,
           border:      `1px solid ${borderColor}`,
           backdropFilter: 'blur(10px)',
-          minWidth: 88,
+          minWidth: 'clamp(72px, 18vw, 88px)',
         }}
       >
         {/* icon */}
         <motion.span
           animate={{ color: hovered ? skill.color : 'var(--text-secondary)' }}
           transition={{ duration: 0.2 }}
-          style={{ fontSize: 30, lineHeight: 1, display: 'flex' }}
+          style={{ fontSize: 'clamp(22px, 5vw, 30px)', lineHeight: 1, display: 'flex' }}
         >
           <skill.Icon />
         </motion.span>
