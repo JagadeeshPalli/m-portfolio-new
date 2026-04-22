@@ -238,6 +238,11 @@ const ExperienceSection = () => {
           backgroundSize: '80px 80px',
         }}
       />
+      <div className="absolute top-6 right-6 pointer-events-none select-none"
+           style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
+                    fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+        04
+      </div>
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12">
 

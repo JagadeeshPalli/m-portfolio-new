@@ -128,6 +128,11 @@ const Contact = () => {
             backgroundSize:  '32px 32px',
           }}
         />
+        <div className="absolute top-6 right-6 pointer-events-none select-none"
+             style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
+                      fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+          07
+        </div>
 
         {/* radial glow centre */}
         <div

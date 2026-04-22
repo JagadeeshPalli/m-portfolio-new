@@ -176,6 +176,11 @@ const SkillsSection = () => {
           backgroundSize: '28px 28px',
         }}
       />
+      <div className="absolute top-6 right-6 pointer-events-none select-none"
+           style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
+                    fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+        03
+      </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
 

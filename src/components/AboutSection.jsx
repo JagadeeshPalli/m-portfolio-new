@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, Suspense } from 'react';
+import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree, extend } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { AiOutlineCloudDownload } from 'react-icons/ai';
 import { useTheme } from '../context/ThemeContext';
+import gsap from 'gsap';
 
 /* register OrbitControls as a JSX element */
 extend({ OrbitControls });
@@ -146,17 +147,39 @@ const EarthScene = ({ isDark }) => (
 );
 
 /* ════════════════════════════════════════════════════
-   STAT CHIP
+   STAT CHIP  — GSAP count-up animation on enter
 ════════════════════════════════════════════════════ */
-const Stat = ({ value, label, color }) => (
-  <div
-    className="flex flex-col items-center px-5 py-3 rounded-xl"
-    style={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', backdropFilter: 'blur(10px)' }}
-  >
-    <span className="font-display text-2xl font-bold" style={{ color }}>{value}</span>
-    <span className="font-code text-[10px] tracking-widest uppercase mt-0.5" style={{ color: 'var(--text-muted)' }}>{label}</span>
-  </div>
-);
+const Stat = ({ value, label, color, inView }) => {
+  const match   = String(value).match(/^(\d+(?:\.\d+)?)(.*)/);
+  const numeric = match ? parseFloat(match[1]) : 0;
+  const suffix  = match ? match[2] : '';
+  const hasRun  = useRef(false);
+  const [displayed, setDisplayed] = useState('0' + suffix);
+
+  useEffect(() => {
+    if (!inView || hasRun.current) return;
+    hasRun.current = true;
+    const obj = { val: 0 };
+    gsap.to(obj, {
+      val:      numeric,
+      duration: 1.6,
+      ease:     'power2.out',
+      delay:    0.2,
+      onUpdate() { setDisplayed(Math.round(obj.val) + suffix); },
+      onComplete() { setDisplayed(value); },
+    });
+  }, [inView]); // eslint-disable-line
+
+  return (
+    <div
+      className="flex flex-col items-center px-5 py-3 rounded-xl"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', backdropFilter: 'blur(10px)' }}
+    >
+      <span className="font-display text-2xl font-bold" style={{ color }}>{displayed}</span>
+      <span className="font-code text-[10px] tracking-widest uppercase mt-0.5" style={{ color: 'var(--text-muted)' }}>{label}</span>
+    </div>
+  );
+};
 
 /* ════════════════════════════════════════════════════
    ABOUT SECTION
@@ -188,6 +211,12 @@ const AboutSection = () => {
           backgroundSize: '60px 60px',
         }}
       />
+      {/* section watermark number */}
+      <div className="absolute top-6 right-6 pointer-events-none select-none"
+           style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
+                    fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+        02
+      </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
 
@@ -229,10 +258,10 @@ const AboutSection = () => {
             </p>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <Stat value="5+"  label="Years exp"    color={cyan}  />
-              <Stat value="4"   label="Companies"    color={cyan}  />
-              <Stat value="98%" label="Test coverage" color={amber} />
-              <Stat value="40%" label="DB speed ↑"   color={amber} />
+              <Stat value="5+"  label="Years exp"     color={cyan}  inView={inView} />
+              <Stat value="4"   label="Companies"     color={cyan}  inView={inView} />
+              <Stat value="98%" label="Test coverage"  color={amber} inView={inView} />
+              <Stat value="40%" label="DB speed ↑"    color={amber} inView={inView} />
             </div>
 
             <motion.a

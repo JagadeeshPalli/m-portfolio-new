@@ -280,6 +280,11 @@ const Projects = () => {
           backgroundSize: '60px 60px',
         }}
       />
+      <div className="absolute top-6 right-6 pointer-events-none select-none"
+           style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
+                    fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+        06
+      </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
 

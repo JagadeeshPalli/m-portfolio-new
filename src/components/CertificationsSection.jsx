@@ -259,6 +259,11 @@ const CertificationsSection = () => {
           backgroundSize:  '30px 30px',
         }}
       />
+      <div className="absolute top-6 right-6 pointer-events-none select-none"
+           style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 'clamp(5rem,16vw,12rem)',
+                    fontWeight: 900, color: cyan, opacity: 0.04, lineHeight: 1, userSelect: 'none' }}>
+        05
+      </div>
 
       {/* ambient glow */}
       <div
