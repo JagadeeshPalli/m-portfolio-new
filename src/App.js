@@ -39,7 +39,6 @@ function App() {
           <SkillsSection />
           <ExperienceSection />
           <CertificationsSection />
-          <ScrollMarquee />
           <Projects />
           <Contact />
 
