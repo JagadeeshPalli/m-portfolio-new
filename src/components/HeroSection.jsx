@@ -14,17 +14,17 @@ import { useLenis } from '../context/LenisContext';
    type controls font / color / size treatment
 ═══════════════════════════════════════════════════════ */
 const LINES = [
-  { id: 0, text: '[SYSTEM BOOT... 2060]',          type: 'sys',    charMs: 34, pauseMs: 320  },
-  { id: 1, text: '[NEURAL INTERFACE CONNECTED]',    type: 'sys',    charMs: 28, pauseMs: 260  },
-  { id: 2, text: '[LOADING IDENTITY MATRIX...]',    type: 'sys',    charMs: 32, pauseMs: 300  },
-  { id: 3, text: '[DECRYPTING PROFILE...]',          type: 'sys',    charMs: 36, pauseMs: 520  },
-  { id: 4, text: '> IDENTITY CONFIRMED.',            type: 'ok',     charMs: 50, pauseMs: 700  },
-  { id: 5, text: '> Hello, I\'m',                   type: 'greet',  charMs: 65, pauseMs: 180  },
-  { id: 6, text: 'JAGADEESH PALLI',                 type: 'name',   charMs: 85, pauseMs: 800  },
-  { id: 7, text: '> Senior Software Engineer',      type: 'role',   charMs: 42, pauseMs: 100  },
-  { id: 8, text: '  & UI Architect',                type: 'role',   charMs: 42, pauseMs: 900  },
-  { id: 9, text: '> "Building the future,',         type: 'quote',  charMs: 36, pauseMs: 80   },
-  { id: 10, text: '   one pixel at a time."',       type: 'quote',  charMs: 36, pauseMs: 1000 },
+  { id: 0, text: '[SYSTEM BOOT... 2060]',          type: 'sys',    charMs: 14, pauseMs: 120  },
+  { id: 1, text: '[NEURAL INTERFACE CONNECTED]',    type: 'sys',    charMs: 12, pauseMs: 100  },
+  { id: 2, text: '[LOADING IDENTITY MATRIX...]',    type: 'sys',    charMs: 13, pauseMs: 110  },
+  { id: 3, text: '[DECRYPTING PROFILE...]',          type: 'sys',    charMs: 14, pauseMs: 200  },
+  { id: 4, text: '> IDENTITY CONFIRMED.',            type: 'ok',     charMs: 20, pauseMs: 260  },
+  { id: 5, text: '> Hello, I\'m',                   type: 'greet',  charMs: 28, pauseMs: 80   },
+  { id: 6, text: 'JAGADEESH PALLI',                 type: 'name',   charMs: 36, pauseMs: 320  },
+  { id: 7, text: '> Senior Software Engineer',      type: 'role',   charMs: 18, pauseMs: 60   },
+  { id: 8, text: '  & UI Architect',                type: 'role',   charMs: 18, pauseMs: 340  },
+  { id: 9, text: '> "Building the future,',         type: 'quote',  charMs: 15, pauseMs: 50   },
+  { id: 10, text: '   one pixel at a time."',       type: 'quote',  charMs: 15, pauseMs: 380  },
 ];
 
 /* ═══════════════════════════════════════════════════════
@@ -65,7 +65,7 @@ const HeroSection = () => {
     if (typed.length < line.text.length) {
       const t = setTimeout(
         () => setTyped(line.text.slice(0, typed.length + 1)),
-        line.charMs + Math.random() * 18
+        line.charMs
       );
       return () => clearTimeout(t);
     }

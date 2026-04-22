@@ -1,95 +1,390 @@
-import React,{useEffect} from 'react'
-import jagadeesh from '../assets/projects/foodmunch.png'
-// import Gist from '../assets/projects//gist.png'
-import campus360 from '../assets/projects/campus360.webp'
-import embedded from '../assets/projects/embedded.png'
-import audit from '../assets/projects/audit.png'
-// import Upscale from '../assets/projects/upscale.png'
-import AOS from 'aos'
-import 'aos/dist/aos.css'
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
+import Tilt from 'react-parallax-tilt';
+import { BsGithub } from 'react-icons/bs';
+import { MdOutlineOpenInNew } from 'react-icons/md';
+import { useTheme } from '../context/ThemeContext';
 
-const Projects = () => {
-  useEffect(()=> {
-    AOS.init({duration: 1000})
-})
+import rentify   from '../assets/projects/Rentify.png';
+import shopeasy  from '../assets/projects/shopeasy.png';
+import keeper    from '../assets/projects/Keeper.png';
+import chatbot   from '../assets/projects/chatbot.png';
+import campus360 from '../assets/projects/campus360.webp';
+import weather   from '../assets/projects/Weather.png';
 
-  const Projects = () => [
-    {
-      id: 1,
-      src: jagadeesh,
-      desc: "Food Munch is a web-application which was designed using Basic HTML, CSS, JS",
-      demo: "https://rohithtangudu.github.io/632_Team15_Hw7/",
-      code: "https://github.com/Ajay-Addike/632_Team15_HW3"
-    },
-    {
-      id: 2,
-      src: audit,
-      desc: "Assessing bias in machine learning models predicting recidivism",
-      demo: "https://github.com/JagadeeshPalli/CS_584_Machine_Learning/blob/main/Final_Project.ipynb",
-      code: "https://github.com/JagadeeshPalli/CS_584_Machine_Learning"
-    },
-    {
-      id: 3,
-      src: campus360,
-      desc: "A Web application designed to streamline students' academic profiles and surveys.",
-      demo: "https://jagadeesh-642.s3.us-east-2.amazonaws.com/SWE_642/index.html",
-      code: "https://github.com/JagadeeshPalli/SWE-642"
-    },
-    {
-      id: 4,
-      src: embedded,
-      desc: "An embedded system designed to enhance care for disabled patients by providing assistance without human ",
-      demo: "https://opeditor.vercel.app/",
-      code: "https://github.com/dipayansarkar47/online-code-editor"
-    },
-    // {
-    //   id: 5,
-    //   src: Upscale,
-    //   // desc: "It is a Weather application which shows temperatures of various cities across the globe made using REST API...",
-    //   demo: "https://upscaleai.vercel.app/",
-    //   code: "https://github.com/dipayansarkar47/upscale-ai"
-    // },
-    // {
-    //   id: 6,
-    //   src: Gist,
-    //   // desc: "It is a Face-Detection application made using Python and Computer Vision...",
-    //   demo: "https://gist-ai.vercel.app/",
-    //   code: "https://github.com/dipayansarkar47/Gist.AI-Summarizer"
-    // },
-  ]
+/* ══════════════════════════════════════════════════════
+   PROJECT DATA
+══════════════════════════════════════════════════════ */
+const ALL_PROJECTS = [
+  {
+    id: 1,
+    title: 'Rentify',
+    desc: 'Full-stack rental marketplace with real-time property listings, advanced search filters, and secure booking flows built on React + Spring Boot.',
+    image: rentify,
+    tags: ['React', 'Spring Boot', 'PostgreSQL', 'AWS'],
+    category: 'fullstack',
+    demo: 'https://github.com/JagadeeshPalli',
+    code: 'https://github.com/JagadeeshPalli',
+    featured: true,
+  },
+  {
+    id: 2,
+    title: 'ShopEasy',
+    desc: 'E-commerce platform with cart management, Stripe payments, and admin dashboard — deployed on AWS with CI/CD via GitHub Actions.',
+    image: shopeasy,
+    tags: ['React', 'Node.js', 'MongoDB', 'Stripe'],
+    category: 'fullstack',
+    demo: 'https://github.com/JagadeeshPalli',
+    code: 'https://github.com/JagadeeshPalli',
+    featured: true,
+  },
+  {
+    id: 3,
+    title: 'AI Chatbot',
+    desc: 'Conversational AI assistant powered by OpenAI GPT with context-aware responses, streaming output, and a polished chat interface.',
+    image: chatbot,
+    tags: ['Python', 'FastAPI', 'React', 'OpenAI'],
+    category: 'ai',
+    demo: 'https://github.com/JagadeeshPalli',
+    code: 'https://github.com/JagadeeshPalli',
+    featured: true,
+  },
+  {
+    id: 4,
+    title: 'Campus 360',
+    desc: 'Student academic portal streamlining profiles, surveys, and grade tracking for university students — hosted on AWS S3 + CloudFront.',
+    image: campus360,
+    tags: ['Angular', 'Spring Boot', 'AWS S3'],
+    category: 'fullstack',
+    demo: 'https://jagadeesh-642.s3.us-east-2.amazonaws.com/SWE_642/index.html',
+    code: 'https://github.com/JagadeeshPalli/SWE-642',
+    featured: false,
+  },
+  {
+    id: 5,
+    title: 'Keeper Notes',
+    desc: 'Google Keep-inspired notes app with real-time sync, label organization, and offline support using IndexedDB.',
+    image: keeper,
+    tags: ['React', 'Firebase', 'IndexedDB'],
+    category: 'frontend',
+    demo: 'https://github.com/JagadeeshPalli',
+    code: 'https://github.com/JagadeeshPalli',
+    featured: false,
+  },
+  {
+    id: 6,
+    title: 'Weather Dashboard',
+    desc: 'Interactive weather dashboard with 7-day forecasts, location search, and animated weather icons using OpenWeatherMap API.',
+    image: weather,
+    tags: ['React', 'REST API', 'Chart.js'],
+    category: 'frontend',
+    demo: 'https://github.com/JagadeeshPalli',
+    code: 'https://github.com/JagadeeshPalli',
+    featured: false,
+  },
+];
 
+const TABS = [
+  { id: 'all',       label: 'All'       },
+  { id: 'fullstack', label: 'Full Stack' },
+  { id: 'frontend',  label: 'Frontend'  },
+  { id: 'ai',        label: 'AI / ML'   },
+];
+
+/* ══════════════════════════════════════════════════════
+   PROJECT CARD
+══════════════════════════════════════════════════════ */
+const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
+  const [hovered, setHovered] = useState(false);
+  const accent = project.featured ? cyan : amber;
 
   return (
-    <div name="projects" className='h-auto max-h-screen-lg  bg-gradient-to-b from-black to-gray-800 w-full text-white
-     md:h-screen'>
-      <div className='max-w-screen-lg p-4 mx-auto flex flex-col justify-center w-full h-full'>
-        <div className='pb-8 mt-16 w-full flex flex-col justify-center items-center mx-auto'>
-          <h3 className='text-4xl pb-2 font-bold inline border-b-4 border-gray-400'>Personal Projects</h3>
-        </div>
-        <div   className='grid sm:grid-cols-2 md:grid-cols-3 mb-20 gap-8 px-12 sm:px-0'>
-          {
-            Projects().map(({ id, src, desc, demo, code }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+    >
+      <Tilt
+        tiltMaxAngleX={8}
+        tiltMaxAngleY={8}
+        glareEnable={isDark}
+        glareMaxOpacity={0.08}
+        glareColor={cyan}
+        glarePosition="all"
+        scale={1.02}
+        transitionSpeed={600}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        <div
+          className="relative rounded-2xl overflow-hidden h-full flex flex-col"
+          style={{
+            background:     'var(--glass-bg)',
+            border:         `1px solid ${hovered ? accent : 'var(--glass-border)'}`,
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            boxShadow:      hovered
+              ? `0 16px 48px rgba(0,0,0,0.3), 0 0 32px ${accent}20`
+              : '0 4px 24px rgba(0,0,0,0.2)',
+            transition: 'border-color 0.25s, box-shadow 0.25s',
+          }}
+        >
+          {/* top accent bar */}
+          <div
+            className="absolute top-0 left-0 right-0 h-0.5 z-10"
+            style={{
+              background: hovered
+                ? `linear-gradient(90deg,${accent},${accent}88,transparent)`
+                : `linear-gradient(90deg,transparent,${accent}44,transparent)`,
+              transition: 'background 0.3s',
+            }}
+          />
 
-              <div data-aos="fade-in" data-aos-duration="500" key={id} className='shadow-md shadow-gray-600 rounded-lg'>
-                <img src={src} alt="Ai" className='rounded-md duration-200 hover:scale-105' />
-                <p className='p-2 text-justify font-extralight'>{desc}</p>
-                <div className='flex items-center justify-center'>
-                  
-                  <button className='w-1/2 px-6 py-3 m-4 duration-200 hover:scale-105 bg-gradient-to-l from-gray-700 to-blue-900 rounded-md'>
-                    <a href={demo}>Demo</a>
-                  </button>
-                  <button  className='w-1/2 px-6 py-3 m-4 duration-200 hover:scale-105 bg-gradient-to-l from-purple-900 to-gray-700 rounded-md'>
-                    <a href={code}>Code</a>
-                  </button>
-                </div>
-              </div>
+          {/* image */}
+          <div className="relative overflow-hidden" style={{ height: 200 }}>
+            <motion.img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover"
+              animate={{ scale: hovered ? 1.07 : 1 }}
+              transition={{ duration: 0.45 }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: hovered
+                  ? `linear-gradient(to bottom, transparent 40%, ${isDark ? 'rgba(10,10,10,0.85)' : 'rgba(15,15,45,0.75)'} 100%)`
+                  : `linear-gradient(to bottom, transparent 30%, ${isDark ? 'rgba(10,10,10,0.92)' : 'rgba(15,15,45,0.82)'} 100%)`,
+                transition: 'background 0.3s',
+              }}
+            />
 
-            ))
-          }
+            {/* featured badge */}
+            {project.featured && (
+              <span
+                className="absolute top-3 right-3 font-code text-[10px] tracking-wider px-2.5 py-1 rounded-full"
+                style={{ background: `${cyan}22`, border: `1px solid ${cyan}55`, color: cyan }}
+              >
+                Featured
+              </span>
+            )}
+          </div>
+
+          {/* content */}
+          <div className="flex flex-col flex-1 p-5">
+            <h3
+              className="font-display font-bold text-lg mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {project.title}
+            </h3>
+            <p
+              className="font-body text-sm leading-relaxed flex-1 mb-4"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {project.desc}
+            </p>
+
+            {/* tech tags */}
+            <div className="flex flex-wrap gap-1.5 mb-5">
+              {project.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="font-code text-[10px] tracking-wider px-2.5 py-0.5 rounded-full"
+                  style={{
+                    background: `${accent}12`,
+                    border:     `1px solid ${accent}35`,
+                    color:       accent,
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* action buttons */}
+            <div className="flex gap-3">
+              <motion.a
+                href={project.demo}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 flex-1 justify-center px-4 py-2 rounded-lg font-body text-sm font-medium"
+                style={{
+                  background: `${accent}15`,
+                  border:     `1px solid ${accent}45`,
+                  color:       accent,
+                }}
+                whileHover={{ background: `${accent}28`, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <MdOutlineOpenInNew size={15} />
+                Demo
+              </motion.a>
+              <motion.a
+                href={project.code}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 flex-1 justify-center px-4 py-2 rounded-lg font-body text-sm font-medium"
+                style={{
+                  background: 'var(--bg-card)',
+                  border:     '1px solid var(--border-card)',
+                  color:      'var(--text-secondary)',
+                }}
+                whileHover={{ color: cyan, borderColor: `${cyan}55`, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <BsGithub size={14} />
+                Code
+              </motion.a>
+            </div>
+          </div>
         </div>
+      </Tilt>
+    </motion.div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════
+   PROJECTS SECTION
+══════════════════════════════════════════════════════ */
+const Projects = () => {
+  const { isDark } = useTheme();
+  const cyan  = isDark ? '#00f5ff' : '#0077bb';
+  const amber = isDark ? '#ff9500' : '#e07800';
+
+  const [activeTab, setActiveTab] = useState('all');
+  const { ref, inView } = useInView({ threshold: 0.05, triggerOnce: true });
+
+  const cardBg    = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)';
+  const borderCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,15,45,0.10)';
+
+  const visible = activeTab === 'all'
+    ? ALL_PROJECTS
+    : ALL_PROJECTS.filter(p => p.category === activeTab);
+
+  return (
+    <section
+      id="projects"
+      ref={ref}
+      className="relative w-full py-24 overflow-hidden"
+      style={{ background: 'var(--bg-secondary)' }}
+    >
+      {/* subtle grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(${cyan}08 1px,transparent 1px),
+                            linear-gradient(90deg,${cyan}08 1px,transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
+
+        {/* heading */}
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="mb-12 text-center"
+        >
+          <p className="section-tag mb-2">// what i've built</p>
+          <h2 className="section-heading">
+            Featured Projects<span style={{ color: cyan }}>.</span>
+          </h2>
+          <div
+            className="mt-4 mx-auto h-px w-24"
+            style={{ background: `linear-gradient(90deg,transparent,${cyan},transparent)` }}
+          />
+        </motion.div>
+
+        {/* filter tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-wrap justify-center gap-2 mb-10"
+        >
+          {TABS.map(tab => {
+            const active = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-1.5 rounded-full font-code text-xs tracking-wider uppercase"
+                style={{
+                  background:   active ? `${cyan}20` : cardBg,
+                  border:       `1px solid ${active ? cyan : borderCol}`,
+                  color:        active ? cyan : 'var(--text-secondary)',
+                  boxShadow:    active ? `0 0 12px ${cyan}30` : 'none',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                {tab.label}
+              </motion.button>
+            );
+          })}
+        </motion.div>
+
+        {/* project grid */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {visible.map((project, i) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                index={i}
+                inView={inView}
+                cyan={cyan}
+                amber={amber}
+                isDark={isDark}
+              />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* GitHub CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-14 text-center"
+        >
+          <p className="font-body text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+            Want to see more? All projects are on GitHub.
+          </p>
+          <motion.a
+            href="https://github.com/JagadeeshPalli"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-body font-semibold text-sm"
+            style={{
+              background: `${cyan}12`,
+              border:     `1px solid ${cyan}45`,
+              color:       cyan,
+            }}
+            whileHover={{ scale: 1.05, boxShadow: `0 0 24px ${cyan}35` }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <BsGithub size={18} />
+            View GitHub Profile
+          </motion.a>
+        </motion.div>
+
       </div>
-    </div>
-  )
-}
+    </section>
+  );
+};
 
-export default Projects
+export default Projects;
