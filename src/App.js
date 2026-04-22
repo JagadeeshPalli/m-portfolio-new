@@ -8,8 +8,9 @@ import ThemeToggle    from './components/ThemeToggle';
 import ScrollProgress from './components/ScrollProgress';
 
 /* ── redesigned sections (replaced one by one) ── */
-import HeroSection  from './components/HeroSection';
-import AboutSection from './components/AboutSection';
+import HeroSection   from './components/HeroSection';
+import AboutSection  from './components/AboutSection';
+import SkillsSection from './components/SkillsSection';
 
 /* ── sections still pending redesign ── */
 import NavBar     from './components/NavBar';
@@ -32,6 +33,7 @@ function App() {
           <NavBar />
           <HeroSection />
           <AboutSection />
+          <SkillsSection />
           <Projects />
           <Experience />
           <Contact />
