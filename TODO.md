@@ -74,6 +74,32 @@ Worktree path: `E:\Consulting\my-portfolio-m\.claude\worktrees\dreamy-elbakyan-5
      unit-sphere ≈ (-0.70, 0.68, 0.20)). Color: green. Label: "📍 Troy, NY — Now"
    - India pin stays red. Label: "📍 India — Origin"
 
+---
+
+## 🔴 STRICT ISSUES — MUST FIX BEFORE DEPLOY
+
+### Hero Section — Flickering + Background Theme Bug
+- **Page flickers on initial load**: Content disappears briefly then reappears.
+  The hero background (`#0a0a0a` hardcoded) ignores the CSS variable system.
+- **Hero background does NOT change with theme toggle**: HeroSection.jsx uses
+  hardcoded `background: isDark ? '#0a0a0a' : '#0b0b28'` — both are near-black.
+  Light theme hero must use a light background (white/cream `#f8f8f8` or a
+  soft gradient) matching the rest of the site.
+- Fix: replace the hardcoded hex with `background: 'var(--bg-primary)'` in
+  HeroSection.jsx section tag, and ensure particles re-key correctly on theme
+  change so there is no blank flash.
+
+---
+
+### 🟡 ENHANCEMENT — Experience Section Needs More Visual Interest
+- The experience timeline is functional but looks simple / plain compared to the
+  rest of the site. Consider: animated SVG line that draws as you scroll,
+  richer card layouts (company logo placeholder, richer typography hierarchy),
+  a stepper/progress indicator between cards, or a horizontal scroll variant
+  on desktop. Mark for redesign after all sessions are complete.
+
+---
+
 ### 🟢 NEW SECTIONS TO ADD (after Session 10)
 
 9. **Certifications section** — add between Experience and Contact sections.
