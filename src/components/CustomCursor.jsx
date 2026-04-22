@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, useMotionValue, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
-const TRAIL_LEN = 8;
+const TRAIL_LEN = 6;
 
 const CustomCursor = () => {
   const { isDark } = useTheme();
-  const cyan = isDark ? '#00f5ff' : '#0077bb';
+  const cyan  = isDark ? '#00f5ff' : '#0077bb';
+  const amber = isDark ? '#ff9500' : '#e07800';
 
   const [isVisible,  setIsVisible]  = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -24,8 +25,13 @@ const CustomCursor = () => {
   const rafId         = useRef(null);
   const dirtyTrail    = useRef(false);
 
+  /* main cursor — instant tracking */
   const dotX = useMotionValue(-200);
   const dotY = useMotionValue(-200);
+
+  /* follower — very tight spring so it feels nearly instant, just slight weight */
+  const followX = useSpring(dotX, { stiffness: 900, damping: 50, mass: 0.5 });
+  const followY = useSpring(dotY, { stiffness: 900, damping: 50, mass: 0.5 });
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -87,12 +93,12 @@ const CustomCursor = () => {
       const oy = mouseYRef.current;
       const newBursts = Array.from({ length: 6 }, (_, i) => {
         const angle = (i / 6) * Math.PI * 2;
-        const dist  = 22 + Math.random() * 14;
+        const dist  = 20 + Math.random() * 14;
         return { id: now * 100 + i, ox, oy, dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist };
       });
       setBursts(prev => [...prev, ...newBursts]);
       const ids = new Set(newBursts.map(b => b.id));
-      setTimeout(() => setBursts(prev => prev.filter(b => !ids.has(b.id))), 600);
+      setTimeout(() => setBursts(prev => prev.filter(b => !ids.has(b.id))), 550);
     };
 
     document.addEventListener('mousemove',  onMove,   { passive: true });
@@ -115,28 +121,23 @@ const CustomCursor = () => {
 
   if (isMobile) return null;
 
-  /* crosshair dimensions */
-  const lineLen = isHovering ? 14 : 9;
-  const gap     = 5;
-  const dotSize = isHovering ? 3 : 4;
-
   return (
     <>
-      {/* ── Comet trail ── */}
+      {/* ── Diamond trail — small fading rotated squares ── */}
       {trail.map((pt, i) => {
         const t    = (i + 1) / trail.length;
-        const size = Math.max(1.5, t * 5);
+        const size = Math.max(2, t * 6);
         return (
           <div
             key={pt.id}
-            className="fixed top-0 left-0 rounded-full pointer-events-none"
+            className="fixed top-0 left-0 pointer-events-none"
             style={{
               zIndex:    9995,
               width:     size,
               height:    size,
-              transform: `translate(${pt.x - size / 2}px, ${pt.y - size / 2}px)`,
+              transform: `translate(${pt.x - size / 2}px, ${pt.y - size / 2}px) rotate(45deg)`,
               background: cyan,
-              opacity:   t * 0.35,
+              opacity:   t * 0.3,
             }}
           />
         );
@@ -147,9 +148,9 @@ const CustomCursor = () => {
         {bursts.map(b => (
           <motion.div
             key={b.id}
-            className="fixed top-0 left-0 pointer-events-none rounded-full"
-            style={{ zIndex: 9995, width: 4, height: 4, background: cyan }}
-            initial={{ x: b.ox - 2, y: b.oy - 2, opacity: 0.8, scale: 1 }}
+            className="fixed top-0 left-0 pointer-events-none"
+            style={{ zIndex: 9995, width: 4, height: 4, background: cyan, rotate: 45 }}
+            initial={{ x: b.ox - 2, y: b.oy - 2, opacity: 0.85, scale: 1 }}
             animate={{ x: b.ox + b.dx, y: b.oy + b.dy, opacity: 0, scale: 0 }}
             exit={{}}
             transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -157,7 +158,36 @@ const CustomCursor = () => {
         ))}
       </AnimatePresence>
 
-      {/* ── Crosshair cursor ── */}
+      {/* ── Follower diamond — tight spring, barely any lag ── */}
+      <motion.div
+        className="fixed top-0 left-0 pointer-events-none"
+        style={{
+          x:            followX,
+          y:            followY,
+          translateX:   '-50%',
+          translateY:   '-50%',
+          zIndex:       9997,
+          rotate:       45,
+        }}
+        animate={{
+          width:      isHovering ? 28 : 18,
+          height:     isHovering ? 28 : 18,
+          opacity:    isVisible  ? 1  : 0,
+        }}
+        transition={{ width: { duration: 0.18 }, height: { duration: 0.18 }, opacity: { duration: 0.15 } }}
+      >
+        <div
+          className="w-full h-full"
+          style={{
+            border:     `1.5px solid ${cyan}`,
+            background: isHovering ? `${cyan}18` : 'transparent',
+            boxShadow:  `0 0 ${isHovering ? 10 : 5}px ${cyan}${isHovering ? '60' : '35'}`,
+            transition: 'background 0.18s, box-shadow 0.18s',
+          }}
+        />
+      </motion.div>
+
+      {/* ── Main cursor diamond — instant, filled, bright ── */}
       <motion.div
         className="fixed top-0 left-0 pointer-events-none"
         style={{
@@ -166,55 +196,43 @@ const CustomCursor = () => {
           translateX: '-50%',
           translateY: '-50%',
           zIndex:     9999,
+          rotate:     45,
+          background: isHovering ? 'transparent' : cyan,
+          boxShadow:  isHovering
+            ? 'none'
+            : `0 0 8px ${cyan}, 0 0 16px ${cyan}50`,
         }}
-        animate={{ opacity: isVisible ? 1 : 0 }}
+        animate={{
+          width:   isHovering ? 0 : 6,
+          height:  isHovering ? 0 : 6,
+          opacity: isVisible  ? 1 : 0,
+        }}
         transition={{ duration: 0.15 }}
-      >
-        {/* center dot */}
-        <motion.div
-          className="absolute rounded-sm"
-          style={{ background: cyan, boxShadow: `0 0 6px ${cyan}` }}
-          animate={{
-            width:  dotSize,
-            height: dotSize,
-            top:    -(dotSize / 2),
-            left:   -(dotSize / 2),
-          }}
-          transition={{ duration: 0.15 }}
-        />
+      />
 
-        {/* top line */}
-        <motion.div
-          className="absolute"
-          style={{ width: 1.5, background: cyan, left: -0.75, boxShadow: `0 0 4px ${cyan}` }}
-          animate={{ height: lineLen, top: -(gap + lineLen) }}
-          transition={{ duration: 0.15 }}
-        />
-
-        {/* bottom line */}
-        <motion.div
-          className="absolute"
-          style={{ width: 1.5, background: cyan, left: -0.75, top: gap, boxShadow: `0 0 4px ${cyan}` }}
-          animate={{ height: lineLen }}
-          transition={{ duration: 0.15 }}
-        />
-
-        {/* left line */}
-        <motion.div
-          className="absolute"
-          style={{ height: 1.5, background: cyan, top: -0.75, boxShadow: `0 0 4px ${cyan}` }}
-          animate={{ width: lineLen, left: -(gap + lineLen) }}
-          transition={{ duration: 0.15 }}
-        />
-
-        {/* right line */}
-        <motion.div
-          className="absolute"
-          style={{ height: 1.5, background: cyan, top: -0.75, left: gap, boxShadow: `0 0 4px ${cyan}` }}
-          animate={{ width: lineLen }}
-          transition={{ duration: 0.15 }}
-        />
-      </motion.div>
+      {/* ── Hover label shown next to cursor on data-cursor elements ── */}
+      <AnimatePresence>
+        {isHovering && (
+          <motion.div
+            className="fixed pointer-events-none font-code text-[10px] tracking-widest uppercase"
+            style={{
+              x:          dotX,
+              y:          dotY,
+              zIndex:     9998,
+              color:      amber,
+              translateX: '20px',
+              translateY: '-50%',
+              textShadow: `0 0 8px ${amber}`,
+            }}
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 20 }}
+            exit={{ opacity: 0, x: 14 }}
+            transition={{ duration: 0.18 }}
+          >
+            {document.querySelector(':hover[data-cursor]')?.dataset.cursor || ''}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

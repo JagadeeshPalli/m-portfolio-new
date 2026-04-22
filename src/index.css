@@ -34,9 +34,9 @@
   --accent-amber-rgb: 255, 149, 0;
 
   /* Borders */
-  --border:        rgba(0, 245, 255, 0.12);
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-card:   rgba(255, 255, 255, 0.08);
+  --border:        rgba(0, 245, 255, 0.28);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-card:   rgba(255, 255, 255, 0.18);
 
   /* Glows & Shadows */
   --glow-cyan:    0 0 20px rgba(0, 245, 255, 0.25), 0 0 60px rgba(0, 245, 255, 0.08);
@@ -47,12 +47,12 @@
 
   /* Glass */
   --glass-bg:     rgba(10, 10, 20, 0.6);
-  --glass-border: rgba(0, 245, 255, 0.1);
+  --glass-border: rgba(0, 245, 255, 0.25);
   --glass-blur:   blur(16px) saturate(180%);
 
   /* Navigation */
   --nav-bg:       rgba(10, 10, 10, 0.9);
-  --nav-border:   rgba(0, 245, 255, 0.1);
+  --nav-border:   rgba(0, 245, 255, 0.25);
 
   /* Cursor */
   --cursor-color: #00f5ff;
@@ -91,9 +91,9 @@
   --accent-amber-rgb: 224, 120, 0;
 
   /* Borders */
-  --border:        rgba(0, 119, 187, 0.2);
-  --border-subtle: rgba(15, 15, 45, 0.06);
-  --border-card:   rgba(15, 15, 45, 0.1);
+  --border:        rgba(0, 119, 187, 0.4);
+  --border-subtle: rgba(15, 15, 45, 0.14);
+  --border-card:   rgba(15, 15, 45, 0.22);
 
   /* Glows & Shadows */
   --glow-cyan:    0 0 20px rgba(0, 119, 187, 0.2), 0 0 50px rgba(0, 119, 187, 0.06);
@@ -104,12 +104,12 @@
 
   /* Glass */
   --glass-bg:     rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(15, 15, 45, 0.1);
+  --glass-border: rgba(15, 15, 45, 0.25);
   --glass-blur:   blur(16px) saturate(180%);
 
   /* Navigation */
   --nav-bg:       rgba(248, 248, 248, 0.9);
-  --nav-border:   rgba(15, 15, 45, 0.1);
+  --nav-border:   rgba(15, 15, 45, 0.25);
 
   /* Cursor */
   --cursor-color: #0f0f2d;

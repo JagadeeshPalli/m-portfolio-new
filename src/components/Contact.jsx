@@ -353,8 +353,8 @@ const Contact = () => {
       <footer
         className="relative w-full py-10 overflow-hidden"
         style={{
-          background:   isDark ? '#080810' : '#e8e8f0',
-          borderTop:    `1px solid ${cyan}18`,
+          background:   isDark ? '#0d1128' : '#e0e0ee',
+          borderTop:    `1px solid ${cyan}35`,
         }}
       >
         <div className="max-w-5xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">

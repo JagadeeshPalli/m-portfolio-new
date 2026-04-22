@@ -151,8 +151,8 @@ const SkillsSection = () => {
   const { isDark } = useTheme();
   const cyan  = isDark ? '#00f5ff' : '#0077bb';
 
-  const cardBg     = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)';
-  const borderCol  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,15,45,0.10)';
+  const cardBg     = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.75)';
+  const borderCol  = isDark ? 'rgba(0,245,255,0.22)'   : 'rgba(15,15,45,0.22)';
 
   const [activeTab, setActiveTab] = useState('all');
   const { ref, inView } = useInView({ threshold: 0.08, triggerOnce: true });
