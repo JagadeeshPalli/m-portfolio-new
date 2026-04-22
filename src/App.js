@@ -8,15 +8,15 @@ import ThemeToggle    from './components/ThemeToggle';
 import ScrollProgress from './components/ScrollProgress';
 
 /* ── redesigned sections (replaced one by one) ── */
-import HeroSection   from './components/HeroSection';
-import AboutSection  from './components/AboutSection';
-import SkillsSection from './components/SkillsSection';
+import HeroSection       from './components/HeroSection';
+import AboutSection      from './components/AboutSection';
+import SkillsSection     from './components/SkillsSection';
+import ExperienceSection from './components/ExperienceSection';
 
 /* ── sections still pending redesign ── */
-import NavBar     from './components/NavBar';
-import Projects   from './components/Projects';
-import Experience from './components/Experience';
-import Contact    from './components/Contact';
+import NavBar    from './components/NavBar';
+import Projects  from './components/Projects';
+import Contact   from './components/Contact';
 
 function App() {
   return (
@@ -34,8 +34,8 @@ function App() {
           <HeroSection />
           <AboutSection />
           <SkillsSection />
+          <ExperienceSection />
           <Projects />
-          <Experience />
           <Contact />
 
         </div>
