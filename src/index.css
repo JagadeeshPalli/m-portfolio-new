@@ -178,6 +178,28 @@
 }
 
 /* ═══════════════════════════════════════════════════════
+   SMOOTH THEME TRANSITIONS
+   Applied to structural containers so switching dark↔light
+   doesn't cause instant jumps. Canvas and animation elements
+   are explicitly excluded to avoid interfering with Framer Motion.
+═══════════════════════════════════════════════════════ */
+section,
+header,
+footer,
+nav {
+  transition:
+    background-color 0.4s ease,
+    border-color     0.3s ease;
+}
+
+/* Exclude animated/canvas elements */
+canvas,
+[data-framer-component-type],
+.no-transition {
+  transition: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════
    CUSTOM UTILITIES
 ═══════════════════════════════════════════════════════ */
 @layer utilities {

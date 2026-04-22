@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, useMotionValue, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
-const TRAIL_LEN = 7;
+const TRAIL_LEN = 6;
+
+/* Arrow cursor SVG path — tip is at (0,0) in viewBox space */
+const ARROW_PATH = 'M 1 1 L 1 17 L 5 13.5 L 8 21 L 10.5 19.5 L 7.5 12.5 L 13 12.5 Z';
 
 const CustomCursor = () => {
   const { isDark } = useTheme();
@@ -25,9 +28,13 @@ const CustomCursor = () => {
   const rafId         = useRef(null);
   const dirtyTrail    = useRef(false);
 
-  /* single element — instant tracking, no follower */
+  /* Arrow cursor — instant tracking */
   const dotX = useMotionValue(-200);
   const dotY = useMotionValue(-200);
+
+  /* Ring follower — slight spring lag so it feels alive without drifting */
+  const ringX = useSpring(dotX, { stiffness: 220, damping: 26 });
+  const ringY = useSpring(dotY, { stiffness: 220, damping: 26 });
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -39,6 +46,7 @@ const CustomCursor = () => {
   useEffect(() => {
     if (isMobile) return;
 
+    /* RAF loop flushes trail to state */
     const tick = () => {
       if (dirtyTrail.current) {
         setTrail([...trailBuf.current]);
@@ -59,14 +67,11 @@ const CustomCursor = () => {
       trailBuf.current = [...trailBuf.current.slice(-(TRAIL_LEN - 1)), { x, y, id }];
       dirtyTrail.current = true;
 
-      if (!isVisibleRef.current) {
-        isVisibleRef.current = true;
-        setIsVisible(true);
-      }
+      if (!isVisibleRef.current) { isVisibleRef.current = true; setIsVisible(true); }
     };
 
-    const onLeave = () => { isVisibleRef.current = false; setIsVisible(false); };
-    const onEnter = () => { isVisibleRef.current = true;  setIsVisible(true);  };
+    const onLeave  = () => { isVisibleRef.current = false; setIsVisible(false); };
+    const onEnter  = () => { isVisibleRef.current = true;  setIsVisible(true);  };
 
     const onOver = (e) => {
       if (e.target.closest('a, button, [data-cursor]') && !isHoveringRef.current) {
@@ -87,14 +92,14 @@ const CustomCursor = () => {
       lastScrollT.current = now;
       const ox = mouseXRef.current;
       const oy = mouseYRef.current;
-      const newBursts = Array.from({ length: 6 }, (_, i) => {
-        const angle = (i / 6) * Math.PI * 2;
-        const dist  = 20 + Math.random() * 14;
+      const newBursts = Array.from({ length: 5 }, (_, i) => {
+        const angle = (i / 5) * Math.PI * 2;
+        const dist  = 18 + Math.random() * 12;
         return { id: now * 100 + i, ox, oy, dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist };
       });
       setBursts(prev => [...prev, ...newBursts]);
       const ids = new Set(newBursts.map(b => b.id));
-      setTimeout(() => setBursts(prev => prev.filter(b => !ids.has(b.id))), 550);
+      setTimeout(() => setBursts(prev => prev.filter(b => !ids.has(b.id))), 500);
     };
 
     document.addEventListener('mousemove',  onMove,   { passive: true });
@@ -117,40 +122,26 @@ const CustomCursor = () => {
 
   if (isMobile) return null;
 
-  const accent = isHovering ? amber : cyan;
-  const dotSize = isHovering ? 10 : 7;
+  const accent   = isHovering ? amber : cyan;
+  const ringSize = isHovering ? 44    : 28;
 
   return (
     <>
-      {/* CSS keyframes for the ping ring */}
-      <style>{`
-        @keyframes cursorPing {
-          0%   { transform: scale(1);   opacity: 0.55; }
-          80%  { transform: scale(2.8); opacity: 0;    }
-          100% { transform: scale(2.8); opacity: 0;    }
-        }
-        @keyframes cursorPingHover {
-          0%   { transform: scale(1);   opacity: 0.7; }
-          80%  { transform: scale(2.4); opacity: 0;   }
-          100% { transform: scale(2.4); opacity: 0;   }
-        }
-      `}</style>
-
-      {/* ── Comet trail — tiny fading dots ── */}
+      {/* ── Comet trail dots ── */}
       {trail.map((pt, i) => {
         const t    = (i + 1) / trail.length;
-        const size = Math.max(2, t * 5);
+        const size = Math.max(2, t * 4);
         return (
           <div
             key={pt.id}
             className="fixed top-0 left-0 rounded-full pointer-events-none"
             style={{
-              zIndex:     9995,
-              width:      size,
-              height:     size,
-              transform:  `translate(${pt.x - size / 2}px, ${pt.y - size / 2}px)`,
+              zIndex:    9995,
+              width:     size,
+              height:    size,
+              transform: `translate(${pt.x - size / 2}px, ${pt.y - size / 2}px)`,
               background: accent,
-              opacity:    t * 0.28,
+              opacity:   t * 0.22,
             }}
           />
         );
@@ -163,61 +154,58 @@ const CustomCursor = () => {
             key={b.id}
             className="fixed top-0 left-0 pointer-events-none rounded-full"
             style={{ zIndex: 9995, width: 4, height: 4, background: cyan }}
-            initial={{ x: b.ox - 2, y: b.oy - 2, opacity: 0.85, scale: 1 }}
+            initial={{ x: b.ox - 2, y: b.oy - 2, opacity: 0.8, scale: 1 }}
             animate={{ x: b.ox + b.dx, y: b.oy + b.dy, opacity: 0, scale: 0 }}
             exit={{}}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
           />
         ))}
       </AnimatePresence>
 
-      {/* ── Single cursor element: solid dot + CSS ping ring ── */}
+      {/* ── Soft ring follower (spring, centered) ── */}
       <motion.div
         className="fixed top-0 left-0 pointer-events-none"
-        style={{
-          x:          dotX,
-          y:          dotY,
-          translateX: '-50%',
-          translateY: '-50%',
-          zIndex:     9999,
-        }}
+        style={{ x: ringX, y: ringY, translateX: '-50%', translateY: '-50%', zIndex: 9996 }}
+        animate={{ opacity: isVisible ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <motion.div
+          style={{ borderRadius: '50%', border: `1.5px solid ${accent}50` }}
+          animate={{ width: ringSize, height: ringSize }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        />
+      </motion.div>
+
+      {/* ── Arrow cursor SVG (tip at mouse position) ── */}
+      <motion.div
+        className="fixed top-0 left-0 pointer-events-none"
+        style={{ x: dotX, y: dotY, zIndex: 9999 }}
         animate={{ opacity: isVisible ? 1 : 0 }}
         transition={{ duration: 0.15 }}
       >
-        {/* ping ring — animates outward and fades, stays centered */}
-        <motion.span
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            background:  accent,
-            top:         '50%',
-            left:        '50%',
-            marginTop:   -(dotSize / 2),
-            marginLeft:  -(dotSize / 2),
-            animation:   isHovering
-              ? 'cursorPingHover 1s ease-out infinite'
-              : 'cursorPing 1.6s ease-out infinite',
-          }}
-          animate={{ width: dotSize, height: dotSize }}
+        <motion.svg
+          width="16" height="24"
+          viewBox="-1 -1 15 24"
+          animate={{ scale: isHovering ? 0.85 : 1 }}
           transition={{ duration: 0.18 }}
-        />
-
-        {/* solid dot — sharp, always on top of the ring */}
-        <motion.span
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            background:  accent,
-            boxShadow:   `0 0 ${isHovering ? 10 : 6}px ${accent}`,
-            top:         '50%',
-            left:        '50%',
-          }}
-          animate={{
-            width:      dotSize,
-            height:     dotSize,
-            marginTop:  -(dotSize / 2),
-            marginLeft: -(dotSize / 2),
-          }}
-          transition={{ duration: 0.18 }}
-        />
+          style={{ filter: `drop-shadow(0 0 3px ${accent}88)` }}
+        >
+          <path
+            d={ARROW_PATH}
+            fill={accent}
+            stroke="rgba(0,0,0,0.55)"
+            strokeWidth="0.7"
+            strokeLinejoin="round"
+          />
+          {/* inner highlight to give 3D feel */}
+          <path
+            d="M 2.5 2.5 L 2.5 11 L 5 8.5"
+            fill="none"
+            stroke="rgba(255,255,255,0.25)"
+            strokeWidth="0.8"
+            strokeLinecap="round"
+          />
+        </motion.svg>
       </motion.div>
     </>
   );

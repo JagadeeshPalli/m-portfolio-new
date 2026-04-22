@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Particles, { initParticlesEngine } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
@@ -9,123 +9,162 @@ import { MdOutlineArrowRightAlt, MdKeyboardArrowDown } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
 import { useLenis } from '../context/LenisContext';
 
+const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@$&*';
+
 /* ═══════════════════════════════════════════════════════
-   BOOT SEQUENCE LINES
-   type controls font / color / size treatment
+   SCRAMBLE HOOK
+   Single interval updates ALL characters at once → 1 render per 45ms.
+   Uses refs for cleanup so intervals don't leak.
 ═══════════════════════════════════════════════════════ */
-const LINES = [
-  { id: 0, text: '[SYSTEM BOOT... 2060]',          type: 'sys',    charMs: 14, pauseMs: 120  },
-  { id: 1, text: '[NEURAL INTERFACE CONNECTED]',    type: 'sys',    charMs: 12, pauseMs: 100  },
-  { id: 2, text: '[LOADING IDENTITY MATRIX...]',    type: 'sys',    charMs: 13, pauseMs: 110  },
-  { id: 3, text: '[DECRYPTING PROFILE...]',          type: 'sys',    charMs: 14, pauseMs: 200  },
-  { id: 4, text: '> IDENTITY CONFIRMED.',            type: 'ok',     charMs: 20, pauseMs: 260  },
-  { id: 5, text: '> Hello, I\'m',                   type: 'greet',  charMs: 28, pauseMs: 80   },
-  { id: 6, text: 'JAGADEESH PALLI',                 type: 'name',   charMs: 36, pauseMs: 320  },
-  { id: 7, text: '> Senior Software Engineer',      type: 'role',   charMs: 18, pauseMs: 60   },
-  { id: 8, text: '  & UI Architect',                type: 'role',   charMs: 18, pauseMs: 340  },
-  { id: 9, text: '> "Building the future,',         type: 'quote',  charMs: 15, pauseMs: 50   },
-  { id: 10, text: '   one pixel at a time."',       type: 'quote',  charMs: 15, pauseMs: 380  },
-];
+const useScramble = (text, { delay = 0, stagger = 62, duration = 440, onComplete } = {}) => {
+  const [chars, setChars] = useState(() => text.split('').map(() => ' '));
+  const doneFlagRef = useRef(false);
+
+  useEffect(() => {
+    doneFlagRef.current = false;
+    let iid;
+
+    const tid = setTimeout(() => {
+      const start = Date.now();
+
+      iid = setInterval(() => {
+        const elapsed = Date.now() - start;
+        let allSettled = true;
+
+        const next = text.split('').map((ch, i) => {
+          if (ch === ' ') return ' ';
+          const charStart = i * stagger;
+          const charElapsed = elapsed - charStart;
+
+          if (charElapsed < 0)          { allSettled = false; return '_'; }
+          if (charElapsed >= duration)  return ch;
+
+          allSettled = false;
+          const progress = charElapsed / duration;
+          /* last 28% of each char's window: 50 % chance to reveal early */
+          if (progress > 0.72 && Math.random() > 0.5) return ch;
+          return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+        });
+
+        setChars(next);
+
+        if (allSettled && !doneFlagRef.current) {
+          doneFlagRef.current = true;
+          clearInterval(iid);
+          /* Force exact final state */
+          setChars(text.split(''));
+          onComplete?.();
+        }
+      }, 45);
+    }, delay);
+
+    return () => {
+      clearTimeout(tid);
+      clearInterval(iid);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return chars;
+};
+
+/* ═══════════════════════════════════════════════════════
+   SCRAMBLE LINE DISPLAY
+═══════════════════════════════════════════════════════ */
+const ScrambleLine = ({ text, delay, stagger, onComplete, lineStyle }) => {
+  const chars = useScramble(text, { delay, stagger, onComplete });
+
+  return (
+    <span style={lineStyle}>
+      {chars.map((c, i) => {
+        const isSettled = c === text[i];
+        const isEmpty   = c === '_' || c === ' ';
+        return (
+          <span
+            key={i}
+            style={{
+              display:    'inline-block',
+              minWidth:   text[i] === ' ' ? '0.45em' : '0.62em',
+              color:      isSettled
+                ? lineStyle.color
+                : isEmpty
+                  ? 'transparent'
+                  : `${lineStyle.color}50`,
+              transition: 'color 0.15s',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {text[i] === ' ' ? '\u00A0' : c}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
 
 /* ═══════════════════════════════════════════════════════
    HERO SECTION
 ═══════════════════════════════════════════════════════ */
 const HeroSection = () => {
-  const { isDark } = useTheme();
-  const lenisRef   = useLenis();
+  const { isDark }  = useTheme();
+  const lenisRef    = useLenis();
 
   const [pReady,    setPReady]    = useState(false);
-  const [done,      setDone]      = useState([]);    // completed lines
-  const [lineIdx,   setLineIdx]   = useState(0);     // current line index
-  const [typed,     setTyped]     = useState('');    // chars typed so far
-  const [phase,     setPhase]     = useState('boot');// 'boot' | 'complete'
+  const [line1Done, setLine1Done] = useState(false);
+  const [nameDone,  setNameDone]  = useState(false);
+  const [showRole,  setShowRole]  = useState(false);
   const [showCTAs,  setShowCTAs]  = useState(false);
 
-  const cyan   = isDark ? '#00f5ff' : '#0077bb';
-  const amber  = isDark ? '#ff9500' : '#e07800';
-  const allDone = lineIdx >= LINES.length;
+  /* Hero background is always dark — cinematic feel regardless of theme */
+  const HERO_BG = '#0a0a0a';
+  const cyan    = '#00f5ff';
+  const amber   = isDark ? '#ff9500' : '#e07800';
 
-  /* ── init tsParticles engine once ── */
-  useEffect(() => {
-    initParticlesEngine(async (e) => {
-      await loadSlim(e);
-    }).then(() => setPReady(true));
-  }, []);
-
-  /* ── typing state machine ── */
-  useEffect(() => {
-    if (allDone) {
-      setPhase('complete');
-      setTimeout(() => setShowCTAs(true), 350);
-      return;
-    }
-
-    const line = LINES[lineIdx];
-
-    if (typed.length < line.text.length) {
-      const t = setTimeout(
-        () => setTyped(line.text.slice(0, typed.length + 1)),
-        line.charMs
-      );
-      return () => clearTimeout(t);
-    }
-
-    /* line fully typed — wait pauseMs then advance */
-    const t = setTimeout(() => {
-      setDone(prev => [...prev, { ...line, text: typed }]);
-      setTyped('');
-      setLineIdx(i => i + 1);
-    }, line.pauseMs);
-    return () => clearTimeout(t);
-  }, [lineIdx, typed, allDone]);
-
-  /* ── scroll to next section ── */
-  const scrollDown = () => {
-    const el = document.getElementById('about');
-    if (el && lenisRef?.current) lenisRef.current.scrollTo(el);
-    else window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
-  };
-
-  /* ── particles config (re-keyed on theme change) ── */
-  const pOptions = {
+  /* ── Particles — stable options, never re-keyed on theme change ── */
+  const pOptions = useMemo(() => ({
     background: { color: { value: 'transparent' } },
-    fpsLimit: 60,
+    fpsLimit:   60,
     interactivity: {
       events: {
-        onHover: { enable: true, mode: 'repulse' },
-        onClick: { enable: true, mode: 'push'    },
+        onHover: { enable: true,  mode: 'repulse' },
+        onClick: { enable: true,  mode: 'push'    },
         resize:  { enable: true },
       },
       modes: {
-        repulse: { distance: 110, duration: 0.4 },
+        repulse: { distance: 100, duration: 0.4 },
         push:    { quantity: 2 },
       },
     },
     particles: {
-      color:  { value: cyan },
-      links:  { color: cyan, distance: 145, enable: true, opacity: isDark ? 0.1 : 0.15, width: 1 },
-      move:   { enable: true, speed: 0.65, random: true, outModes: { default: 'bounce' } },
-      number: { density: { enable: true, area: 950 }, value: 70 },
-      opacity: { value: isDark ? 0.22 : 0.3 },
-      shape:  { type: 'circle' },
-      size:   { value: { min: 1, max: 2.5 } },
+      color:   { value: '#00f5ff' },
+      links:   { color: '#00f5ff', distance: 145, enable: true, opacity: 0.1, width: 1 },
+      move:    { enable: true, speed: 0.65, random: true, outModes: { default: 'bounce' } },
+      number:  { density: { enable: true, area: 950 }, value: 70 },
+      opacity: { value: 0.22 },
+      shape:   { type: 'circle' },
+      size:    { value: { min: 1, max: 2.5 } },
     },
     detectRetina: true,
-  };
+  }), []); /* never changes → Particles never remounts */
 
-  /* ── line colour / font helper ── */
-  const lineStyle = (type) => {
-    switch (type) {
-      case 'sys':   return { color: isDark ? '#2a5544' : '#4466aa', fontFamily: "'JetBrains Mono',monospace", fontSize: '0.85rem' };
-      case 'ok':    return { color: isDark ? '#00cc88' : '#0088aa', fontFamily: "'JetBrains Mono',monospace", fontSize: '0.85rem' };
-      case 'greet': return { color: isDark ? '#8888aa' : '#4a4a6a', fontFamily: "'JetBrains Mono',monospace", fontSize: '1rem' };
-      case 'role':  return { color: isDark ? '#ccccdd' : '#2a2a4a', fontFamily: "'Space Grotesk',sans-serif", fontSize: '1.05rem', fontWeight: 500 };
-      case 'quote': return { color: amber, fontFamily: "'JetBrains Mono',monospace", fontSize: '0.82rem', fontStyle: 'italic' };
-      default:      return {};
-    }
-  };
+  useEffect(() => {
+    initParticlesEngine(e => loadSlim(e)).then(() => setPReady(true));
+  }, []);
 
-  /* ── CTA button ── */
+  /* cascade: name settled → role → CTAs */
+  useEffect(() => {
+    if (!nameDone) return;
+    const t1 = setTimeout(() => setShowRole(true),  220);
+    const t2 = setTimeout(() => setShowCTAs(true),  700);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [nameDone]);
+
+  const scrollDown = useCallback(() => {
+    const el = document.getElementById('about');
+    if (el && lenisRef?.current) lenisRef.current.scrollTo(el, { offset: -80 });
+    else window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+  }, [lenisRef]);
+
+  /* ── CTA helpers ── */
   const CyberBtn = ({ href, onClick, accent, children, download }) => (
     <motion.a
       href={href}
@@ -134,11 +173,7 @@ const HeroSection = () => {
       target={href?.startsWith('http') ? '_blank' : undefined}
       rel={href?.startsWith('http') ? 'noreferrer' : undefined}
       className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-body font-semibold text-sm tracking-wide cursor-pointer"
-      style={{
-        background: `${accent}12`,
-        border:     `1px solid ${accent}55`,
-        color:       accent,
-      }}
+      style={{ background: `${accent}12`, border: `1px solid ${accent}55`, color: accent }}
       whileHover={{ scale: 1.05, boxShadow: `0 0 22px ${accent}40` }}
       whileTap={{ scale: 0.96 }}
     >
@@ -158,16 +193,22 @@ const HeroSection = () => {
     </motion.a>
   );
 
+  /* timing: first line starts at 280ms with 62ms/char stagger + 440ms duration */
+  const FIRST      = 'JAGADEESH';
+  const LAST       = 'PALLI';
+  const firstDelay = 280;
+  const firstTotal = firstDelay + FIRST.length * 62 + 440;   /* ~1300ms */
+  const lastDelay  = firstTotal - 120; /* start LAST slightly before FIRST fully finishes */
+
   return (
     <section
       id="home"
       className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: isDark ? '#0a0a0a' : '#0b0b28' }}
+      style={{ background: HERO_BG }}
     >
-      {/* ── Neural particle background ── */}
+      {/* ── Particle network ── */}
       {pReady && (
         <Particles
-          key={isDark ? 'dark' : 'light'}
           id="hero-particles"
           className="absolute inset-0 z-0"
           options={pOptions}
@@ -178,17 +219,17 @@ const HeroSection = () => {
       <div
         className="absolute inset-0 z-[1] pointer-events-none"
         style={{
-          background: isDark
-            ? 'radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.72) 100%)'
-            : 'radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(11,11,40,0.65) 100%)',
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.72) 100%)',
         }}
       />
 
       {/* ── Corner accent lines ── */}
-      {['tl','tr','bl','br'].map(c => (
-        <div key={c} className={`absolute z-[2] pointer-events-none hidden sm:block w-10 h-10 md:w-16 md:h-16
-          ${c.includes('t') ? 'top-4 md:top-6' : 'bottom-4 md:bottom-6'}
-          ${c.includes('l') ? 'left-4 md:left-6' : 'right-4 md:right-6'}`}
+      {['tl', 'tr', 'bl', 'br'].map(c => (
+        <div
+          key={c}
+          className={`absolute z-[2] pointer-events-none hidden sm:block w-10 h-10 md:w-16 md:h-16
+            ${c.includes('t') ? 'top-4 md:top-6'    : 'bottom-4 md:bottom-6'}
+            ${c.includes('l') ? 'left-4 md:left-6'  : 'right-4 md:right-6'}`}
           style={{
             borderTop:    c.includes('t') ? `1px solid ${cyan}55` : 'none',
             borderBottom: c.includes('b') ? `1px solid ${cyan}55` : 'none',
@@ -198,121 +239,116 @@ const HeroSection = () => {
         />
       ))}
 
-      {/* ── Main terminal content ── */}
-      <div className="relative z-[3] w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-10 pt-20 sm:pt-24 pb-16 sm:pb-20">
+      {/* ── Main content ── */}
+      <div className="relative z-[3] w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-10 pt-20 pb-16">
 
-        {/* Boot progress bar */}
+        {/* Section tag */}
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1,  y:   0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="font-code text-xs tracking-[0.3em] uppercase mb-4"
+          style={{ color: `${cyan}77` }}
+        >
+          // building the future
+        </motion.p>
+
+        {/* ── Scramble name ── */}
+        <div className="mb-1 leading-none" style={{ userSelect: 'none' }}>
+          <ScrambleLine
+            text={FIRST}
+            delay={firstDelay}
+            stagger={62}
+            onComplete={() => setLine1Done(true)}
+            lineStyle={{
+              display:       'block',
+              fontFamily:    'Orbitron, sans-serif',
+              fontSize:      'clamp(2.4rem, 6.5vw, 4.2rem)',
+              fontWeight:    800,
+              letterSpacing: '0.1em',
+              color:         cyan,
+              lineHeight:    1.05,
+              textShadow:    `0 0 40px ${cyan}33`,
+            }}
+          />
+          <ScrambleLine
+            text={LAST}
+            delay={lastDelay}
+            stagger={62}
+            onComplete={() => setNameDone(true)}
+            lineStyle={{
+              display:       'block',
+              fontFamily:    'Orbitron, sans-serif',
+              fontSize:      'clamp(2.4rem, 6.5vw, 4.2rem)',
+              fontWeight:    800,
+              letterSpacing: '0.1em',
+              color:         cyan,
+              lineHeight:    1.05,
+              textShadow:    `0 0 40px ${cyan}33`,
+            }}
+          />
+        </div>
+
+        {/* Divider line sweeps in when first line settles */}
         <AnimatePresence>
-          {phase === 'boot' && (
+          {line1Done && (
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="mb-8 h-px rounded-full overflow-hidden"
-              style={{ background: 'var(--border-subtle)' }}
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 100, opacity: 1 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
+              className="h-px mt-4 mb-5"
+              style={{ background: `linear-gradient(90deg, ${cyan}, transparent)` }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Role */}
+        <AnimatePresence>
+          {showRole && (
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1,  y: 0  }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-1"
             >
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: cyan, boxShadow: `0 0 8px ${cyan}` }}
-                initial={{ width: '0%' }}
-                animate={{ width: `${(lineIdx / LINES.length) * 100}%` }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-              />
+              <p
+                className="font-body font-semibold text-lg"
+                style={{ color: 'rgba(255,255,255,0.88)' }}
+              >
+                Senior Software Engineer
+              </p>
+              <p
+                className="font-body text-base"
+                style={{ color: 'rgba(255,255,255,0.48)' }}
+              >
+                Full-Stack Architect &amp; Cloud Developer
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Completed lines */}
-        <div className="space-y-1.5">
-          {done.map(line => {
-            if (line.type === 'name') {
-              return (
-                <motion.div
-                  key={line.id}
-                  initial={{ opacity: 0, scale: 0.88, y: 8 }}
-                  animate={{
-                    opacity: 1, scale: 1, y: 0,
-                    textShadow: [
-                      `0 0 20px ${cyan}80, 0 0 60px ${cyan}30`,
-                      `0 0 40px ${cyan}cc, 0 0 80px ${cyan}50`,
-                      `0 0 20px ${cyan}80, 0 0 60px ${cyan}30`,
-                    ],
-                  }}
-                  transition={{
-                    opacity: { duration: 0.4 },
-                    scale:   { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] },
-                    textShadow: { duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: 0.4 },
-                  }}
-                  style={{
-                    fontFamily:    'Orbitron, sans-serif',
-                    fontSize:      'clamp(1.9rem, 5vw, 3.4rem)',
-                    fontWeight:    800,
-                    letterSpacing: '0.08em',
-                    color:         cyan,
-                    lineHeight:    1.1,
-                    marginTop:     '0.4rem',
-                    marginBottom:  '0.2rem',
-                  }}
-                >
-                  {line.text}
-                </motion.div>
-              );
-            }
-            return (
-              <motion.div
-                key={line.id}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.28 }}
-                style={lineStyle(line.type)}
-              >
-                {line.text}
-              </motion.div>
-            );
-          })}
-
-          {/* Active typing line */}
-          {!allDone && lineIdx < LINES.length && (
-            <div style={lineStyle(LINES[lineIdx].type)}>
-              {typed}
-              <span
-                style={{
-                  display:       'inline-block',
-                  width:         '2px',
-                  height:        '1em',
-                  background:    cyan,
-                  marginLeft:    '2px',
-                  verticalAlign: 'text-bottom',
-                  boxShadow:     `0 0 6px ${cyan}`,
-                  animation:     'cursorBlink 0.9s step-end infinite',
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* CTA section */}
+        {/* CTAs */}
         <AnimatePresence>
           {showCTAs && (
             <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
-              className="mt-10 flex flex-wrap items-center gap-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1,  y: 0  }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="mt-8 flex flex-wrap items-center gap-3"
             >
               <CyberBtn
                 href="#projects"
                 accent={cyan}
                 onClick={e => {
                   e.preventDefault();
-                  lenisRef?.current?.scrollTo(document.getElementById('projects'));
+                  lenisRef?.current?.scrollTo(document.getElementById('projects'), { offset: -80 });
                 }}
               >
-                View Projects
-                <MdOutlineArrowRightAlt size={18} />
+                View Projects <MdOutlineArrowRightAlt size={18} />
               </CyberBtn>
 
               <CyberBtn href="mailto:palli.jagadeesh.cs2024@gmail.com" accent={amber}>
-                <HiOutlineMail size={17} />
-                Hire Me
+                <HiOutlineMail size={17} /> Hire Me
               </CyberBtn>
 
               <div className="flex items-center gap-2">
@@ -322,9 +358,12 @@ const HeroSection = () => {
                 <IconBtn href="https://www.linkedin.com/in/jagadeesh-palli-cs1326/">
                   <BsLinkedin size={19} />
                 </IconBtn>
-                <CyberBtn href="/JAGADEESH PALLI-SE1.pdf" accent="var(--text-secondary)" download>
-                  <AiOutlineCloudDownload size={17} />
-                  Resume
+                <CyberBtn
+                  href="/JAGADEESH PALLI-SE1.pdf"
+                  accent="rgba(255,255,255,0.45)"
+                  download
+                >
+                  <AiOutlineCloudDownload size={17} /> Resume
                 </CyberBtn>
               </div>
             </motion.div>
@@ -338,15 +377,15 @@ const HeroSection = () => {
           <motion.button
             onClick={scrollDown}
             initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1,  y: 0  }}
             transition={{ duration: 0.5, delay: 0.5 }}
             className="absolute bottom-7 left-1/2 -translate-x-1/2 z-[3]
-                       flex flex-col items-center gap-1.5 cursor-pointer group"
+                       flex flex-col items-center gap-1.5 cursor-pointer"
             aria-label="Scroll down"
           >
             <span
               className="font-code text-[10px] tracking-[0.35em] uppercase"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: 'rgba(255,255,255,0.3)' }}
             >
               scroll
             </span>
@@ -356,7 +395,7 @@ const HeroSection = () => {
             >
               <MdKeyboardArrowDown
                 size={26}
-                style={{ color: cyan, filter: isDark ? `drop-shadow(0 0 6px ${cyan})` : 'none' }}
+                style={{ color: cyan, filter: `drop-shadow(0 0 6px ${cyan})` }}
               />
             </motion.div>
           </motion.button>

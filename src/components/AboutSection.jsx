@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react';
+import React, { useRef, useMemo, Suspense, useState, useEffect, Component } from 'react';
 import { Canvas, useFrame, useLoader, useThree, extend } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -10,6 +10,77 @@ import gsap from 'gsap';
 
 /* register OrbitControls as a JSX element */
 extend({ OrbitControls });
+
+/* ════════════════════════════════════════════════════
+   WEBGL CHECK + ERROR BOUNDARY
+════════════════════════════════════════════════════ */
+
+/* CSS globe shown when WebGL is unavailable or throws */
+const GlobeFallback = ({ isDark }) => {
+  const cyan = isDark ? '#00f5ff' : '#0077bb';
+  return (
+    <div
+      style={{
+        width: '100%', height: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div style={{ position: 'relative', width: 260, height: 260 }}>
+        {/* outer glow */}
+        <div style={{
+          position: 'absolute', inset: -30,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${cyan}18 0%, transparent 70%)`,
+          filter: 'blur(18px)',
+        }} />
+
+        {/* sphere */}
+        <div style={{
+          width: '100%', height: '100%',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at 35% 30%, #2a5878 0%, #1a3a5c 40%, #0d2240 75%, #060f1e 100%)',
+          boxShadow: `0 0 0 1.5px ${cyan}33, 0 0 50px ${cyan}18, inset -28px -18px 50px rgba(0,0,0,0.7), inset 8px 4px 18px rgba(80,140,210,0.12)`,
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
+          {/* lat lines */}
+          {[30, 50, 70].map(pct => (
+            <div key={pct} style={{ position:'absolute', left:0, right:0, top:`${pct}%`, height:1, background:`${cyan}22` }} />
+          ))}
+          {/* continent blobs */}
+          <div style={{ position:'absolute', width:'32%', height:'26%', top:'18%', left:'12%', borderRadius:'45% 55% 50% 50%', background:`${cyan}22` }} />
+          <div style={{ position:'absolute', width:'20%', height:'32%', top:'14%', left:'50%', borderRadius:'40% 60% 45% 55%', background:`${cyan}18` }} />
+          <div style={{ position:'absolute', width:'28%', height:'20%', top:'58%', left:'54%', borderRadius:'55% 45% 55% 45%', background:`${cyan}15` }} />
+          {/* longitude hint */}
+          <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:`repeating-linear-gradient(90deg,transparent,transparent 38px,${cyan}12 38px,${cyan}12 39px)`, opacity:0.4 }} />
+        </div>
+
+        {/* India dot */}
+        <div style={{
+          position:'absolute', top:'38%', left:'58%',
+          width:8, height:8, borderRadius:'50%',
+          background:'#ff4444',
+          boxShadow:'0 0 10px #ff4444, 0 0 22px rgba(255,68,68,0.45)',
+          animation:'indiaPulse 2s ease-in-out infinite',
+        }} />
+      </div>
+      <style>{`@keyframes indiaPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:0.55}}`}</style>
+    </div>
+  );
+};
+
+/* Error boundary — catches WebGL context errors and texture load failures */
+class EarthErrorBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(err) {
+    console.warn('[Earth] WebGL/render error caught by boundary:', err.message);
+  }
+  render() {
+    if (this.state.failed) return <GlobeFallback isDark={this.props.isDark} />;
+    return this.props.children;
+  }
+}
 
 /* ── India's lon/lat → unit-sphere position ── */
 const LAT = 20.5937 * (Math.PI / 180);
@@ -72,7 +143,7 @@ const EarthMesh = () => {
   const ref = useRef();
   const texture = useLoader(
     TextureLoader,
-    'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'
+    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
   );
   useFrame((_, dt) => { ref.current.rotation.y += dt * 0.09; });
   return (
@@ -127,7 +198,7 @@ const EarthFallback = () => (
 const EarthScene = ({ isDark }) => (
   <Canvas
     camera={{ position: [0, 0, 2.75], fov: 45 }}
-    gl={{ antialias: true, alpha: true }}
+    gl={{ antialias: true, alpha: true, powerPreference: 'default', failIfMajorPerformanceCaveat: false }}
     style={{ width: '100%', height: '100%' }}
     data-cursor="DRAG TO ROTATE"
   >
@@ -295,7 +366,9 @@ const AboutSection = () => {
                 filter: 'blur(28px)',
               }}
             />
-            <EarthScene isDark={isDark} />
+            <EarthErrorBoundary isDark={isDark}>
+              <EarthScene isDark={isDark} />
+            </EarthErrorBoundary>
             {/* India label */}
             <div
               className="absolute bottom-6 left-1/2 -translate-x-1/2 font-code text-[10px]
