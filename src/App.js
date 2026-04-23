@@ -18,7 +18,7 @@ import AchievementsSection    from './components/AchievementsSection';
 import ScrollMarquee          from './components/ScrollMarquee';
 
 /* ── sections still pending redesign ── */
-import Navbar   from './components/NavBar';
+import Navbar   from './components/Navbar';
 import Projects from './components/Projects';
 import Contact  from './components/Contact';
 
