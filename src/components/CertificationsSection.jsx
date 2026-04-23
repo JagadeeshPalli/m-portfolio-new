@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ScrambleHeading from './ScrambleHeading';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { SiMicrosoftazure, SiOracle, SiAmazonaws } from 'react-icons/si';
 import { HiOutlineExternalLink } from 'react-icons/hi';
@@ -305,7 +305,7 @@ const CertificationsSection = () => {
           transition={{ duration: 0.6 }}
           className="mb-14 text-center"
         >
-          <p className="section-tag mb-2">// credentials</p>
+          <p className="section-tag mb-2">{'// credentials'}</p>
           <h2 className="section-heading">
             <ScrambleHeading text="Certifications" stagger={62} duration={510} />
             <span style={{ color: cyan }}>.</span>

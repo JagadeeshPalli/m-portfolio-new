@@ -284,7 +284,7 @@ const HeroSection = () => {
           className="font-code text-xs tracking-[0.3em] uppercase mb-4"
           style={{ color: `${cyan}77` }}
         >
-          // building the future
+          {'// building the future'}
         </motion.p>
 
         {/* ── Scramble name ── remounts on every re-entry via scrambleKey */}
