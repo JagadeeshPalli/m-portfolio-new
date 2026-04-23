@@ -8,8 +8,9 @@ const NAV_LINKS = [
   { id: 'about',           label: 'About'    },
   { id: 'skills',          label: 'Skills'   },
   { id: 'experience',      label: 'Experience' },
-  { id: 'certifications',  label: 'Certs'    },
-  { id: 'projects',        label: 'Projects' },
+  { id: 'certifications',  label: 'Certs'       },
+  { id: 'achievements',    label: 'Achievements' },
+  { id: 'projects',        label: 'Projects'     },
   { id: 'contact',         label: 'Contact'  },
 ];
 
@@ -88,13 +89,18 @@ const Navbar = () => {
             >
               <span
                 className="font-display font-black text-xl tracking-widest"
-                style={{ color: cyan, textShadow: isDark ? `0 0 16px ${cyan}60` : 'none' }}
+                style={{ color: cyan, textShadow: `0 0 16px ${cyan}60` }}
               >
                 JP
               </span>
               <span
                 className="hidden sm:block font-body font-semibold text-base"
-                style={{ color: 'var(--text-primary)' }}
+                style={{
+                  /* hero is always dark → force white when unscrolled so it's
+                     readable in light theme; revert to theme colour once the
+                     scrolled background appears                               */
+                  color: scrolled ? 'var(--text-primary)' : 'rgba(255,255,255,0.90)',
+                }}
               >
                 Jagadeesh<span style={{ color: cyan }}>.</span>
               </span>
@@ -104,12 +110,20 @@ const Navbar = () => {
             <nav className="hidden md:flex items-center gap-1">
               {NAV_LINKS.map(link => {
                 const active = activeId === link.id;
+                /* Unscrolled: nav floats over the dark hero — always use white
+                   for inactive links so they're visible in both themes.
+                   Scrolled:  the frosted background is set, use theme colour. */
+                const linkColor = active
+                  ? cyan
+                  : scrolled
+                    ? 'var(--text-secondary)'
+                    : 'rgba(255,255,255,0.72)';
                 return (
                   <div key={link.id} className="relative">
                     <motion.button
                       onClick={() => navigate(link.id)}
                       className="relative px-4 py-1.5 font-body text-sm font-medium rounded-full"
-                      style={{ color: active ? cyan : 'var(--text-secondary)' }}
+                      style={{ color: linkColor }}
                       whileHover={{ color: cyan }}
                     >
                       {link.label}
