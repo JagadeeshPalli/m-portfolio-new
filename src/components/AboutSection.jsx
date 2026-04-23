@@ -1,5 +1,6 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect, Component } from 'react';
 import { Canvas, useFrame, useLoader, useThree, extend } from '@react-three/fiber';
+import ScrambleHeading from './ScrambleHeading';
 import { TextureLoader } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { motion } from 'framer-motion';
@@ -82,23 +83,56 @@ class EarthErrorBoundary extends Component {
   }
 }
 
-/* ── India lon/lat → unit-sphere ── */
-const LAT_IN  = 20.5937 * (Math.PI / 180);
-const LON_IN  = 78.9629 * (Math.PI / 180);
-const INDIA   = [
-  Math.cos(LAT_IN) * Math.sin(LON_IN),
-  Math.sin(LAT_IN),
-  Math.cos(LAT_IN) * Math.cos(LON_IN),
-];
+/* ══════════════════════════════════════════════════════
+   LAT/LON → XYZ  (Three.js SphereGeometry UV convention)
+   The standard maths formula does NOT match Three.js UV mapping.
+   Three.js SphereGeometry uses:
+     phi   = (lon + 180) * π/180   (longitude wraps the opposite direction)
+     theta = (90  - lat) * π/180   (polar angle from North pole)
+     x = -cos(phi)*sin(theta)
+     y =  cos(theta)
+     z =  sin(phi)*sin(theta)
+══════════════════════════════════════════════════════ */
+function latLonToXYZ(lat, lon) {
+  const phi   = (lon + 180) * Math.PI / 180;
+  const theta = (90 - lat)  * Math.PI / 180;
+  return [
+    -Math.cos(phi) * Math.sin(theta),
+     Math.cos(theta),
+     Math.sin(phi) * Math.sin(theta),
+  ];
+}
 
-/* ── Troy, NY lon/lat → unit-sphere  (lon is West → negative) ── */
-const LAT_NY  = 42.7284 * (Math.PI / 180);
-const LON_NY  = -73.6918 * (Math.PI / 180);
-const TROY    = [
-  Math.cos(LAT_NY) * Math.sin(LON_NY),
-  Math.sin(LAT_NY),
-  Math.cos(LAT_NY) * Math.cos(LON_NY),
-];
+const INDIA = latLonToXYZ(20.5937,  78.9629);   /* Nagpur, India  — red  */
+const TROY  = latLonToXYZ(42.7284, -73.6918);   /* Troy, NY, USA  — green */
+
+/* ══════════════════════════════════════════════════════
+   SUN DIRECTION — live UTC time → sub-solar point
+   sunLon = -(h - 12) * 15      (prime meridian faces sun at noon UTC)
+   sunLat = 23.45° × sin(...)   (solar declination)
+══════════════════════════════════════════════════════ */
+function getDayOfYear() {
+  const now   = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  return Math.ceil((now - start) / 86400000) + 1;
+}
+
+function getSunDirection() {
+  const now    = new Date();
+  const h      = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const doy    = getDayOfYear();
+  const sunLat = 23.45 * Math.sin((2 * Math.PI / 365) * (doy - 81));
+  const sunLon = -(h - 12) * 15;
+  return latLonToXYZ(sunLat, sunLon);   /* unit vector toward sun */
+}
+
+function getInitialRotY() {
+  /* At UTC noon, prime meridian faces sun (sunLon = 0).
+     Rotating the group by (h-12)*15 deg aligns the correct side. */
+  const now = new Date();
+  const h   = now.getUTCHours() + now.getUTCMinutes() / 60;
+  return (h - 12) * 15 * (Math.PI / 180);
+}
 
 /* ════════════════════════════════════════════════════
    THREE.JS SCENE PIECES
@@ -168,12 +202,18 @@ const LocationPin = ({ coords, color, glowColor }) => {
 };
 
 /* ── Rotating group: Earth sphere + both pins co-rotate together ── */
-const EarthGroup = () => {
+const EarthGroup = ({ initialRotY = 0 }) => {
   const groupRef = useRef();
   const texture  = useLoader(
     TextureLoader,
     'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
   );
+
+  /* Set initial rotation once on mount so day/night side is correct */
+  useEffect(() => {
+    if (groupRef.current) groupRef.current.rotation.y = initialRotY;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useFrame((_, dt) => { groupRef.current.rotation.y += dt * 0.09; });
 
   return (
@@ -210,26 +250,46 @@ const EarthFallback = () => (
 );
 
 /* Full scene */
-const EarthScene = ({ isDark }) => (
-  <Canvas
-    camera={{ position: [0, 0, 2.75], fov: 45 }}
-    gl={{ antialias: true, alpha: true, powerPreference: 'default', failIfMajorPerformanceCaveat: false }}
-    style={{ width: '100%', height: '100%' }}
-    data-cursor="DRAG TO ROTATE"
-  >
-    <ambientLight intensity={0.22} />
-    <directionalLight position={[5, 3, 5]} intensity={1.55} color="#fff8ee" />
-    <pointLight position={[-4, -2, -4]} intensity={0.28} color={isDark ? '#00f5ff' : '#4488ff'} />
+const EarthScene = ({ isDark }) => {
+  /* Compute sun direction + initial rotation once at mount time */
+  const sunDir    = useMemo(() => getSunDirection(),  []);
+  const initialRY = useMemo(() => getInitialRotY(),   []);
+  const SUN_SCALE = 5;
 
-    {isDark && <StarField />}
+  return (
+    <Canvas
+      camera={{ position: [0, 0, 2.75], fov: 45 }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'default', failIfMajorPerformanceCaveat: false }}
+      style={{ width: '100%', height: '100%' }}
+      data-cursor="DRAG TO ROTATE"
+    >
+      {/* Dim ambient so the dark side is genuinely dark */}
+      <ambientLight intensity={0.07} />
 
-    <Suspense fallback={<EarthFallback />}>
-      <EarthGroup />
-    </Suspense>
-    <Atmosphere isDark={isDark} />
-    <Controls />
-  </Canvas>
-);
+      {/* Main sun light — positioned at the live sub-solar point */}
+      <directionalLight
+        position={[sunDir[0] * SUN_SCALE, sunDir[1] * SUN_SCALE, sunDir[2] * SUN_SCALE]}
+        intensity={2.0}
+        color="#fff8ee"
+      />
+
+      {/* Faint fill light on the dark side (city-lights mood) */}
+      <pointLight
+        position={[-sunDir[0] * 3, -sunDir[1] * 3, -sunDir[2] * 3]}
+        intensity={0.12}
+        color={isDark ? '#3366ff' : '#4488ff'}
+      />
+
+      {isDark && <StarField />}
+
+      <Suspense fallback={<EarthFallback />}>
+        <EarthGroup initialRotY={initialRY} />
+      </Suspense>
+      <Atmosphere isDark={isDark} />
+      <Controls />
+    </Canvas>
+  );
+};
 
 /* ════════════════════════════════════════════════════
    STAT CHIP  — GSAP count-up animation on enter
@@ -312,7 +372,8 @@ const AboutSection = () => {
         >
           <p className="section-tag mb-2">// about me</p>
           <h2 className="section-heading">
-            Who I Am<span style={{ color: cyan }}>.</span>
+            <ScrambleHeading text="Who I Am" stagger={72} duration={540} />
+            <span style={{ color: cyan }}>.</span>
           </h2>
           <div className="mt-3 h-px w-24" style={{ background: `linear-gradient(90deg,${cyan},transparent)` }} />
         </motion.div>

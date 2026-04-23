@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import ScrambleHeading from './ScrambleHeading';
 import { useInView } from 'react-intersection-observer';
 import { useTheme } from '../context/ThemeContext';
 
@@ -327,7 +328,8 @@ const ExperienceSection = () => {
         >
           <p className="section-tag mb-2">// career path</p>
           <h2 className="section-heading">
-            Work Experience<span style={{ color: cyan }}>.</span>
+            <ScrambleHeading text="Work Experience" stagger={60} duration={500} />
+            <span style={{ color: cyan }}>.</span>
           </h2>
           <div
             className="mt-4 mx-auto h-px w-24"

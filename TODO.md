@@ -29,6 +29,7 @@ Worktree path: `E:\Consulting\my-portfolio-m\.claude\worktrees\dreamy-elbakyan-5
 - [x] Session 14 — UI polish: experience timeline, circular scroll gauge, contact borders, project card heights, theme toggle position
 - [x] Session 15 — Performance: scramble hero, Earth WebGL fallback, arrow cursor, theme transition smoothing
 - [x] Session 16 — Earth co-rotation fix (India red + Troy NY green pins), mouse-glow borders on all cards, macOS Dock skill effect, hero vibrancy
+- [x] Session 17 — ScrambleHeading on all 6 section headings (re-fires every scroll entry), hero name re-scrambles on scroll-back, ScrollToTop floating button with progress ring, Earth pin coordinates corrected (Three.js UV formula), live Earth day/night from UTC time
 
 ---
 

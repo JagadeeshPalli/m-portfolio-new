@@ -5,6 +5,7 @@ import Tilt from 'react-parallax-tilt';
 import { BsGithub } from 'react-icons/bs';
 import { MdOutlineOpenInNew } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
+import ScrambleHeading from './ScrambleHeading';
 
 import rentify   from '../assets/projects/Rentify.png';
 import shopeasy  from '../assets/projects/shopeasy.png';
@@ -307,7 +308,8 @@ const Projects = () => {
         >
           <p className="section-tag mb-2">// what i've built</p>
           <h2 className="section-heading">
-            Featured Projects<span style={{ color: cyan }}>.</span>
+            <ScrambleHeading text="Featured Projects" stagger={58} duration={490} />
+            <span style={{ color: cyan }}>.</span>
           </h2>
           <div
             className="mt-4 mx-auto h-px w-24"

@@ -8,6 +8,7 @@ import { AiOutlineCloudDownload } from 'react-icons/ai';
 import { MdOutlineArrowRightAlt, MdKeyboardArrowDown } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
 import { useLenis } from '../context/LenisContext';
+import { useInView } from 'react-intersection-observer';
 
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@$&*';
 
@@ -108,11 +109,29 @@ const HeroSection = () => {
   const { isDark }  = useTheme();
   const lenisRef    = useLenis();
 
-  const [pReady,    setPReady]    = useState(false);
-  const [line1Done, setLine1Done] = useState(false);
-  const [nameDone,  setNameDone]  = useState(false);
-  const [showRole,  setShowRole]  = useState(false);
-  const [showCTAs,  setShowCTAs]  = useState(false);
+  const [pReady,      setPReady]      = useState(false);
+  const [line1Done,   setLine1Done]   = useState(false);
+  const [nameDone,    setNameDone]    = useState(false);
+  const [showRole,    setShowRole]    = useState(false);
+  const [showCTAs,    setShowCTAs]    = useState(false);
+  const [scrambleKey, setScrambleKey] = useState(0);
+
+  /* Re-scramble name every time hero re-enters the viewport */
+  const entryCount = useRef(0);
+  const { ref: heroRef, inView: heroInView } = useInView({ triggerOnce: false, threshold: 0.2 });
+  useEffect(() => {
+    if (heroInView) {
+      entryCount.current += 1;
+      if (entryCount.current > 1) {
+        /* reset cascade state so the whole reveal replays */
+        setLine1Done(false);
+        setNameDone(false);
+        setShowRole(false);
+        setShowCTAs(false);
+        setScrambleKey(k => k + 1);
+      }
+    }
+  }, [heroInView]);
 
   /*
    * Dark  → near-black  (same cinematic look)
@@ -217,6 +236,7 @@ const HeroSection = () => {
   return (
     <section
       id="home"
+      ref={heroRef}
       className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden"
       style={{ background: HERO_BG }}
     >
@@ -267,8 +287,8 @@ const HeroSection = () => {
           // building the future
         </motion.p>
 
-        {/* ── Scramble name ── */}
-        <div className="mb-1 leading-none" style={{ userSelect: 'none' }}>
+        {/* ── Scramble name ── remounts on every re-entry via scrambleKey */}
+        <div key={scrambleKey} className="mb-1 leading-none" style={{ userSelect: 'none' }}>
           <ScrambleLine
             text={FIRST}
             delay={firstDelay}

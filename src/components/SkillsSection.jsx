@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScrambleHeading from './ScrambleHeading';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import {
@@ -210,7 +211,8 @@ const SkillsSection = () => {
         >
           <p className="section-tag mb-2">// tech stack</p>
           <h2 className="section-heading">
-            Skills &amp; Technologies<span style={{ color: cyan }}>.</span>
+            <ScrambleHeading text="Skills & Technologies" stagger={55} duration={480} />
+            <span style={{ color: cyan }}>.</span>
           </h2>
           <div className="mt-4 mx-auto h-px w-24"
             style={{ background: `linear-gradient(90deg,transparent,${cyan},transparent)` }} />

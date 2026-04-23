@@ -6,6 +6,7 @@ import { HiOutlineMail, HiOutlineLocationMarker } from 'react-icons/hi';
 import { MdOutlineSend } from 'react-icons/md';
 import { AiOutlineCheckCircle } from 'react-icons/ai';
 import { useTheme } from '../context/ThemeContext';
+import ScrambleHeading from './ScrambleHeading';
 
 /* ══════════════════════════════════════════════════════
    CONTACT INFO
@@ -159,7 +160,7 @@ const Contact = () => {
           <motion.div {...fadeUp()} className="mb-14 text-center">
             <p className="section-tag mb-2">// get in touch</p>
             <h2 className="section-heading">
-              <GlitchText text="Let's Connect" cyan={cyan} />
+              <ScrambleHeading text="Let's Connect" stagger={68} duration={520} />
               <span style={{ color: cyan }}>.</span>
             </h2>
             <div

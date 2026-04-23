@@ -6,6 +6,7 @@ import { LenisProvider }  from './context/LenisContext';
 import CustomCursor   from './components/CustomCursor';
 import ThemeToggle    from './components/ThemeToggle';
 import ScrollProgress from './components/ScrollProgress';
+import ScrollToTop    from './components/ScrollToTop';
 
 /* ── redesigned sections (replaced one by one) ── */
 import HeroSection       from './components/HeroSection';
@@ -30,6 +31,7 @@ function App() {
           <CustomCursor />
           <ThemeToggle />
           <ScrollProgress />
+          <ScrollToTop />
 
           {/* page sections */}
           <Navbar />
