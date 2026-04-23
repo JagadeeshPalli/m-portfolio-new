@@ -7,8 +7,8 @@ import { MdOutlineOpenInNew } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
 import ScrambleHeading from './ScrambleHeading';
 
-import portfolio from '../assets/projects/shopeasy.png';  /* swap for real screenshot after deploy */
-import neurovault from '../assets/projects/Ai.png';
+import portfolio from '../assets/projects/portfolio-snap.png'; 
+import neurovault from '../assets/projects/neurovault.png';
 import keeper    from '../assets/projects/Keeper.png';
 import chatbot   from '../assets/projects/chatbot.png';
 import campus360 from '../assets/projects/campus360.webp';

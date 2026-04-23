@@ -57,8 +57,8 @@ const ScrollToTop = () => {
           aria-label="Scroll to top"
           style={{
             position:       'fixed',
-            bottom:         '1.6rem',
-            right:          '1.6rem',
+            bottom:         '7rem',
+            right:          '2.2rem',
             zIndex:         9999,
             width:          44,
             height:         44,
