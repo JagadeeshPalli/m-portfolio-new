@@ -7,8 +7,8 @@ import { MdOutlineOpenInNew } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
 import ScrambleHeading from './ScrambleHeading';
 
-import rentify   from '../assets/projects/Rentify.png';
-import shopeasy  from '../assets/projects/shopeasy.png';
+import portfolio from '../assets/projects/shopeasy.png';  /* swap for real screenshot after deploy */
+import neurovault from '../assets/projects/Ai.png';
 import keeper    from '../assets/projects/Keeper.png';
 import chatbot   from '../assets/projects/chatbot.png';
 import campus360 from '../assets/projects/campus360.webp';
@@ -20,24 +20,24 @@ import weather   from '../assets/projects/Weather.png';
 const ALL_PROJECTS = [
   {
     id: 1,
-    title: 'Rentify',
-    desc: 'Full-stack rental marketplace with real-time property listings, advanced search filters, and secure booking flows built on React + Spring Boot.',
-    image: rentify,
-    tags: ['React', 'Spring Boot', 'PostgreSQL', 'AWS'],
-    category: 'fullstack',
-    demo: 'https://github.com/JagadeeshPalli',
-    code: 'https://github.com/JagadeeshPalli',
+    title: 'Developer Portfolio',
+    desc: 'This portfolio — a next-gen showcase with a live 3D Earth globe, matrix-scramble headings, tsParticles, macOS Dock skill cards, Framer Motion animations, and full dark / light theming. Built with React, Three.js, and Tailwind.',
+    image: portfolio,
+    tags: ['React', 'Three.js', 'Framer Motion', 'Tailwind CSS', 'R3F'],
+    category: 'frontend',
+    demo: 'https://jagadeesh-palli.netlify.app',
+    code: 'https://github.com/JagadeeshPalli/m-portfolio-new',
     featured: true,
   },
   {
     id: 2,
-    title: 'ShopEasy',
-    desc: 'E-commerce platform with cart management, Stripe payments, and admin dashboard — deployed on AWS with CI/CD via GitHub Actions.',
-    image: shopeasy,
-    tags: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-    category: 'fullstack',
-    demo: 'https://github.com/JagadeeshPalli',
-    code: 'https://github.com/JagadeeshPalli',
+    title: 'NeuroVault AI',
+    desc: 'Upload any document and chat with it using GPT-4o, Claude, Gemini, or Llama via Groq. FAISS vector search + local SentenceTransformer embeddings keep retrieval fast and private. Streaming responses, isolated sessions, one Docker container — live on Hugging Face Spaces.',
+    image: neurovault,
+    tags: ['FastAPI', 'React', 'TypeScript', 'FAISS', 'Python', 'Docker'],
+    category: 'ai',
+    demo: 'https://huggingface.co/spaces/JagadeeshRony/Neurovault',
+    code: 'https://github.com/JagadeeshPalli/NeuroVault-AI',
     featured: true,
   },
   {
