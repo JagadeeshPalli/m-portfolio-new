@@ -14,6 +14,7 @@ import AboutSection      from './components/AboutSection';
 import SkillsSection     from './components/SkillsSection';
 import ExperienceSection      from './components/ExperienceSection';
 import CertificationsSection  from './components/CertificationsSection';
+import AchievementsSection    from './components/AchievementsSection';
 import ScrollMarquee          from './components/ScrollMarquee';
 
 /* ── sections still pending redesign ── */
@@ -41,6 +42,7 @@ function App() {
           <SkillsSection />
           <ExperienceSection />
           <CertificationsSection />
+          <AchievementsSection />
           <Projects />
           <Contact />
 
