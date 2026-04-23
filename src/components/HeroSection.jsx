@@ -454,7 +454,7 @@ const HeroSection = () => {
                   <BsLinkedin size={19} />
                 </IconBtn>
                 <CyberBtn
-                  href="/JAGADEESH PALLI-SE1.pdf"
+                  href="/JAGADEESH-PALLI-SE1.pdf"
                   accent="rgba(255,255,255,0.45)"
                   download
                 >
