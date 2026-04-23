@@ -17,7 +17,7 @@ import CertificationsSection  from './components/CertificationsSection';
 import ScrollMarquee          from './components/ScrollMarquee';
 
 /* ── sections still pending redesign ── */
-import Navbar   from './components/Navbar';
+import Navbar   from './components/NavBar';
 import Projects from './components/Projects';
 import Contact  from './components/Contact';
 
@@ -27,7 +27,7 @@ function App() {
       <LenisProvider>
         <div className="app-wrapper scanlines">
 
-          {/* global overlays */}
+          {/* overlays */}
           <CustomCursor />
           <ThemeToggle />
           <ScrollProgress />

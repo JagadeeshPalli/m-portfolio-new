@@ -209,7 +209,7 @@ const SkillsSection = () => {
           transition={{ duration: 0.6 }}
           className="mb-12 text-center"
         >
-          <p className="section-tag mb-2">// tech stack</p>
+          <p className="section-tag mb-2">{'// tech stack'}</p>
           <h2 className="section-heading">
             <ScrambleHeading text="Skills & Technologies" stagger={55} duration={480} />
             <span style={{ color: cyan }}>.</span>

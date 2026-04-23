@@ -370,7 +370,7 @@ const AboutSection = () => {
           variants={fL} initial="hidden" animate={inView ? 'show' : 'hidden'}
           transition={tx} className="mb-12"
         >
-          <p className="section-tag mb-2">// about me</p>
+          <p className="section-tag mb-2">{'// about me'}</p>
           <h2 className="section-heading">
             <ScrambleHeading text="Who I Am" stagger={72} duration={540} />
             <span style={{ color: cyan }}>.</span>
