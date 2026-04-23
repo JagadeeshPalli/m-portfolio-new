@@ -115,6 +115,15 @@ const HeroSection = () => {
   const [showRole,    setShowRole]    = useState(false);
   const [showCTAs,    setShowCTAs]    = useState(false);
   const [scrambleKey, setScrambleKey] = useState(0);
+  const [availability, setAvailability] = useState({ available: true, status: 'Available for opportunities', detail: '' });
+
+  /* Fetch live availability config from /public/availability.json */
+  useEffect(() => {
+    fetch('/availability.json')
+      .then(r => r.json())
+      .then(setAvailability)
+      .catch(() => {}); /* silently keep default on failure */
+  }, []);
 
   /* Re-scramble name every time hero re-enters the viewport */
   const entryCount = useRef(0);
@@ -349,13 +358,15 @@ const HeroSection = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: '50%',
-                  background: '#00cc66',
-                  boxShadow: '0 0 0 3px rgba(0,204,102,0.2), 0 0 10px #00cc66',
+                  background: availability.available ? '#00cc66' : '#ff4444',
+                  boxShadow: availability.available
+                    ? '0 0 0 3px rgba(0,204,102,0.2), 0 0 10px #00cc66'
+                    : '0 0 0 3px rgba(255,68,68,0.2), 0 0 10px #ff4444',
                   flexShrink: 0,
                   animation: 'statusPulse 2.4s ease-in-out infinite',
                 }} />
-                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'rgba(0,204,102,0.7)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                  Available for opportunities
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: availability.available ? 'rgba(0,204,102,0.7)' : 'rgba(255,68,68,0.7)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                  {availability.status}
                 </span>
               </div>
 
