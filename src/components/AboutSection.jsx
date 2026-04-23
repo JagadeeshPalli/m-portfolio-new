@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect, Component } from 'react';
 import { Canvas, useFrame, useLoader, useThree, extend } from '@react-three/fiber';
 import ScrambleHeading from './ScrambleHeading';
-import { TextureLoader } from 'three';
+import { TextureLoader, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
@@ -11,6 +11,39 @@ import gsap from 'gsap';
 
 /* register OrbitControls as a JSX element */
 extend({ OrbitControls });
+
+/* ══════════════════════════════════════════════════════
+   EARTH DAY / NIGHT GLSL SHADERS
+   The fragment shader blends the day texture with a city-lights
+   (night) texture based on the dot product of the world-space
+   surface normal against the world-space sun direction.
+   smoothstep(-0.15, 0.35) gives a ~50° soft terminator band.
+══════════════════════════════════════════════════════ */
+const EARTH_VERT = /* glsl */`
+  varying vec2  vUv;
+  varying vec3  vNormalWorld;
+  void main() {
+    vUv          = uv;
+    vNormalWorld = normalize(mat3(modelMatrix) * normal);
+    gl_Position  = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const EARTH_FRAG = /* glsl */`
+  uniform sampler2D dayMap;
+  uniform sampler2D nightMap;
+  uniform vec3      sunDir;        /* world-space unit vector toward sun */
+  varying vec2  vUv;
+  varying vec3  vNormalWorld;
+  void main() {
+    vec4  dayColor   = texture2D(dayMap,   vUv);
+    vec4  nightColor = texture2D(nightMap, vUv);
+    float intensity  = dot(normalize(vNormalWorld), normalize(sunDir));
+    /* blend: 0 = full city-lights, 1 = full day texture */
+    float blend      = smoothstep(-0.15, 0.35, intensity);
+    gl_FragColor     = mix(nightColor, dayColor, blend);
+  }
+`;
 
 /* ════════════════════════════════════════════════════
    WEBGL CHECK + ERROR BOUNDARY
@@ -107,9 +140,23 @@ const INDIA = latLonToXYZ(20.5937,  78.9629);   /* Nagpur, India  — red  */
 const TROY  = latLonToXYZ(42.7284, -73.6918);   /* Troy, NY, USA  — green */
 
 /* ══════════════════════════════════════════════════════
-   SUN DIRECTION — live UTC time → sub-solar point
-   sunLon = -(h - 12) * 15      (prime meridian faces sun at noon UTC)
-   sunLat = 23.45° × sin(...)   (solar declination)
+   SUN DIRECTION (WORLD-SPACE)
+   ─────────────────────────────────────────────────────
+   Three.js SphereGeometry stores the prime meridian (lon=0)
+   at world-space +X when the group is unrotated (rotY = 0).
+   At UTC noon (h=12) the sun is over lon=0, so the initial
+   rotation is 0 and the sun direction is [1,0,0] in world space.
+
+   For an arbitrary UTC hour h:
+     sunLon  = -(h-12)×15      (sub-solar longitude, degrees)
+     rotY    = (h-12)×15×π/180 (Earth group initial Y-rotation)
+
+   The sub-solar point in the Earth's LOCAL frame is
+     localDir = latLonToXYZ(sunLat, sunLon)
+   To get the WORLD-SPACE direction we rotate by rotY around Y:
+     R_y(rotY): x' = x·cos + z·sin,  z' = -x·sin + z·cos
+   This ensures the directional light illuminates the correct
+   hemisphere even after the Earth group is rotated.
 ══════════════════════════════════════════════════════ */
 function getDayOfYear() {
   const now   = new Date();
@@ -117,21 +164,22 @@ function getDayOfYear() {
   return Math.ceil((now - start) / 86400000) + 1;
 }
 
-function getSunDirection() {
+function getInitialRotY() {
+  const now = new Date();
+  const h   = now.getUTCHours() + now.getUTCMinutes() / 60;
+  return (h - 12) * 15 * (Math.PI / 180);
+}
+
+function getSunDirectionWorld(rotY) {
   const now    = new Date();
   const h      = now.getUTCHours() + now.getUTCMinutes() / 60;
   const doy    = getDayOfYear();
   const sunLat = 23.45 * Math.sin((2 * Math.PI / 365) * (doy - 81));
   const sunLon = -(h - 12) * 15;
-  return latLonToXYZ(sunLat, sunLon);   /* unit vector toward sun */
-}
-
-function getInitialRotY() {
-  /* At UTC noon, prime meridian faces sun (sunLon = 0).
-     Rotating the group by (h-12)*15 deg aligns the correct side. */
-  const now = new Date();
-  const h   = now.getUTCHours() + now.getUTCMinutes() / 60;
-  return (h - 12) * 15 * (Math.PI / 180);
+  const [lx, ly, lz] = latLonToXYZ(sunLat, sunLon); // local Earth frame
+  /* Rotate local → world by applying the initial Y-rotation */
+  const c = Math.cos(rotY), s = Math.sin(rotY);
+  return [lx * c + lz * s, ly, -lx * s + lz * c];
 }
 
 /* ════════════════════════════════════════════════════
@@ -201,15 +249,25 @@ const LocationPin = ({ coords, color, glowColor }) => {
   );
 };
 
-/* ── Rotating group: Earth sphere + both pins co-rotate together ── */
-const EarthGroup = ({ initialRotY = 0 }) => {
+/* ── Rotating group: Earth sphere (day/night shader) + both pins ── */
+const EarthGroup = ({ initialRotY = 0, sunDirWorld = [1, 0, 0] }) => {
   const groupRef = useRef();
-  const texture  = useLoader(
-    TextureLoader,
-    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
-  );
 
-  /* Set initial rotation once on mount so day/night side is correct */
+  /* Load day + city-lights textures in parallel (Suspense waits for both).
+     Night texture is served locally from /public to avoid CDN restrictions. */
+  const [dayTex, nightTex] = useLoader(TextureLoader, [
+    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+    '/earth_lights_2048.jpg',
+  ]);
+
+  /* Stable uniforms — created once, never recreated */
+  const uniforms = useMemo(() => ({
+    dayMap:   { value: dayTex },
+    nightMap: { value: nightTex },
+    sunDir:   { value: new Vector3(...sunDirWorld) },
+  }), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Set initial rotation once so the correct hemisphere faces the light */
   useEffect(() => {
     if (groupRef.current) groupRef.current.rotation.y = initialRotY;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -218,10 +276,14 @@ const EarthGroup = ({ initialRotY = 0 }) => {
 
   return (
     <group ref={groupRef}>
-      {/* Earth surface */}
+      {/* Earth surface — custom day/night blend shader */}
       <mesh>
         <sphereGeometry args={[1, 64, 64]} />
-        <meshStandardMaterial map={texture} />
+        <shaderMaterial
+          uniforms={uniforms}
+          vertexShader={EARTH_VERT}
+          fragmentShader={EARTH_FRAG}
+        />
       </mesh>
       {/* India — red */}
       <LocationPin coords={INDIA} color="#ff3333" glowColor="#ff6666" />
@@ -251,10 +313,10 @@ const EarthFallback = () => (
 
 /* Full scene */
 const EarthScene = ({ isDark }) => {
-  /* Compute sun direction + initial rotation once at mount time */
-  const sunDir    = useMemo(() => getSunDirection(),  []);
-  const initialRY = useMemo(() => getInitialRotY(),   []);
-  const SUN_SCALE = 5;
+  /* Compute once at mount — stable for the lifetime of the component */
+  const initialRY   = useMemo(() => getInitialRotY(),                []);
+  const sunDirWorld = useMemo(() => getSunDirectionWorld(initialRY), [initialRY]);
+  const SUN_SCALE   = 5;
 
   return (
     <Canvas
@@ -263,31 +325,248 @@ const EarthScene = ({ isDark }) => {
       style={{ width: '100%', height: '100%' }}
       data-cursor="DRAG TO ROTATE"
     >
-      {/* Dim ambient so the dark side is genuinely dark */}
-      <ambientLight intensity={0.07} />
+      {/* Low ambient so the atmosphere rim still shows on the night side */}
+      <ambientLight intensity={0.05} />
 
-      {/* Main sun light — positioned at the live sub-solar point */}
+      {/* Sun light in correct world-space direction for the Atmosphere mesh.
+          The Earth surface itself is rendered by the custom GLSL shader. */}
       <directionalLight
-        position={[sunDir[0] * SUN_SCALE, sunDir[1] * SUN_SCALE, sunDir[2] * SUN_SCALE]}
-        intensity={2.0}
+        position={[sunDirWorld[0] * SUN_SCALE, sunDirWorld[1] * SUN_SCALE, sunDirWorld[2] * SUN_SCALE]}
+        intensity={1.8}
         color="#fff8ee"
-      />
-
-      {/* Faint fill light on the dark side (city-lights mood) */}
-      <pointLight
-        position={[-sunDir[0] * 3, -sunDir[1] * 3, -sunDir[2] * 3]}
-        intensity={0.12}
-        color={isDark ? '#3366ff' : '#4488ff'}
       />
 
       {isDark && <StarField />}
 
       <Suspense fallback={<EarthFallback />}>
-        <EarthGroup initialRotY={initialRY} />
+        <EarthGroup initialRotY={initialRY} sunDirWorld={sunDirWorld} />
       </Suspense>
       <Atmosphere isDark={isDark} />
       <Controls />
     </Canvas>
+  );
+};
+
+/* ════════════════════════════════════════════════════
+   GITHUB CONTRIBUTIONS HEATMAP
+   52 weeks × 7 days — seeded realistic mock data
+════════════════════════════════════════════════════ */
+
+/* Deterministic LCG so the grid is stable across renders */
+function seededRng(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+/* Build 364 contribution levels (0-4) anchored to real calendar days */
+function buildContribData() {
+  const TOTAL = 364; // 52 × 7
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  /* Seed = day-of-year so data shifts naturally by ~1 cell per day */
+  const rand = seededRng(
+    Math.floor(today.getTime() / 86400000) & 0x7fffffff
+  );
+
+  /* "Sprint" windows: ranges of high activity (day index from TOTAL-364) */
+  const SPRINTS = [
+    { start: 0,   end: 18,  base: 0.55 }, // ~1 yr ago – active period
+    { start: 60,  end: 85,  base: 0.70 }, // spring push
+    { start: 120, end: 145, base: 0.60 },
+    { start: 190, end: 230, base: 0.75 }, // summer spike
+    { start: 280, end: 310, base: 0.65 },
+    { start: 335, end: 364, base: 0.80 }, // recent burst
+  ];
+
+  return Array.from({ length: TOTAL }, (_, idx) => {
+    /* date for this cell */
+    const d = new Date(today);
+    d.setDate(today.getDate() - (TOTAL - 1 - idx));
+    const dow = d.getDay(); // 0=Sun … 6=Sat
+
+    /* weekend penalty */
+    const weekendFactor = (dow === 0 || dow === 6) ? 0.38 : 1.0;
+
+    /* sprint boost */
+    const sprint = SPRINTS.find(sp => idx >= sp.start && idx < sp.end);
+    const sprintBoost = sprint ? sprint.base : 0.18;
+
+    const prob = sprintBoost * weekendFactor;
+    const r    = rand();
+
+    if (r > prob)                  return 0;
+    if (r > prob * 0.35)           return 1;
+    if (r > prob * 0.18)           return 2;
+    if (r > prob * 0.08)           return 3;
+    return 4;
+  });
+}
+
+/* Month labels: find the first cell of each month */
+function buildMonthLabels(totalCells = 364) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const labels = [];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let prevMonth = -1;
+
+  for (let i = 0; i < totalCells; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (totalCells - 1 - i));
+    const m = d.getMonth();
+    /* i is a flat index; week column = Math.floor(i / 7) */
+    if (m !== prevMonth) {
+      labels.push({ month: MONTHS[m], col: Math.floor(i / 7) });
+      prevMonth = m;
+    }
+  }
+  return labels;
+}
+
+const CONTRIB_DATA   = buildContribData();
+const MONTH_LABELS   = buildMonthLabels();
+const TOTAL_CONTRIBS = CONTRIB_DATA.reduce((a, v) => a + (v > 0 ? 1 : 0), 0) * 4; // displayed count
+
+const GitHubContributions = ({ cyan, inView }) => {
+  const [hovered, setHovered] = useState(null); // cell index
+  const WEEKS = 52;
+  const DAYS  = 7;
+
+  /* colour for each level */
+  const cellColor = (level) => {
+    if (level === 0) return 'var(--glass-bg)';
+    const alphas = ['', '22', '48', '77', 'cc'];
+    return `${cyan}${alphas[level]}`;
+  };
+
+  const cellBorder = (level) =>
+    level === 0 ? '1px solid var(--glass-border)' : `1px solid ${cyan}28`;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-12"
+    >
+      {/* sub-heading row */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="font-code text-[11px] tracking-[0.2em] uppercase" style={{ color: cyan }}>
+          GitHub Contributions
+        </span>
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg,${cyan}45,transparent)` }} />
+        <a
+          href="https://github.com/JagadeeshPalli"
+          target="_blank"
+          rel="noreferrer"
+          className="font-code text-[10px] tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          View profile →
+        </a>
+      </div>
+
+      {/* contribution count */}
+      <p className="font-code text-[11px] mb-3" style={{ color: 'var(--text-muted)' }}>
+        <span style={{ color: cyan, fontWeight: 600 }}>{TOTAL_CONTRIBS}</span>
+        {' '}contributions in the last year
+      </p>
+
+      {/* grid wrapper — horizontally scrollable on small screens */}
+      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ minWidth: 640, position: 'relative' }}>
+
+          {/* month labels */}
+          <div style={{ display: 'flex', paddingLeft: 28, marginBottom: 4, position: 'relative', height: 16 }}>
+            {MONTH_LABELS.map(({ month, col }) => (
+              <span
+                key={`${month}-${col}`}
+                className="font-code"
+                style={{
+                  position: 'absolute',
+                  left: 28 + col * 13,
+                  fontSize: 9,
+                  color: 'var(--text-muted)',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1,
+                }}
+              >
+                {month}
+              </span>
+            ))}
+          </div>
+
+          {/* day labels + cells */}
+          <div style={{ display: 'flex', gap: 0 }}>
+            {/* day-of-week labels */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 1, marginRight: 4, flexShrink: 0 }}>
+              {['','Mon','','Wed','','Fri',''].map((d, i) => (
+                <span
+                  key={i}
+                  className="font-code"
+                  style={{ fontSize: 9, color: 'var(--text-muted)', height: 11, lineHeight: '11px', textAlign: 'right', minWidth: 20 }}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+
+            {/* cells: arranged as WEEKS columns × 7 rows */}
+            <div style={{ display: 'flex', gap: 2 }}>
+              {Array.from({ length: WEEKS }, (_, w) => (
+                <div key={w} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {Array.from({ length: DAYS }, (_, d) => {
+                    const idx   = w * DAYS + d;
+                    const level = CONTRIB_DATA[idx] ?? 0;
+                    return (
+                      <div
+                        key={d}
+                        onMouseEnter={() => setHovered(idx)}
+                        onMouseLeave={() => setHovered(null)}
+                        style={{
+                          width:        11,
+                          height:       11,
+                          borderRadius: 2,
+                          background:   cellColor(level),
+                          border:       cellBorder(level),
+                          transition:   'transform 0.12s, box-shadow 0.12s',
+                          transform:    hovered === idx ? 'scale(1.35)' : 'scale(1)',
+                          boxShadow:    hovered === idx && level > 0 ? `0 0 6px ${cyan}66` : 'none',
+                          cursor:       'default',
+                          flexShrink:   0,
+                        }}
+                        title={level > 0 ? `${level} contribution${level > 1 ? 's' : ''}` : 'No contributions'}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* legend */}
+          <div className="flex items-center gap-1.5 mt-3 justify-end">
+            <span className="font-code" style={{ fontSize: 9, color: 'var(--text-muted)' }}>Less</span>
+            {[0,1,2,3,4].map(l => (
+              <div
+                key={l}
+                style={{
+                  width: 11, height: 11, borderRadius: 2,
+                  background: cellColor(l),
+                  border: cellBorder(l),
+                }}
+              />
+            ))}
+            <span className="font-code" style={{ fontSize: 9, color: 'var(--text-muted)' }}>More</span>
+          </div>
+
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
@@ -335,6 +614,15 @@ const AboutSection = () => {
   const amber = isDark ? '#ff9500' : '#e07800';
 
   const { ref, inView } = useInView({ threshold: 0.12, triggerOnce: true });
+
+  /* Lazy-mount the Three.js Canvas: only create the WebGL context once the
+     globe container is within 300 px of the viewport.  triggerOnce keeps it
+     mounted after the first entry so it doesn't tear down mid-interaction. */
+  const { ref: globeRef, inView: globeNear } = useInView({
+    threshold:   0,
+    rootMargin:  '300px',
+    triggerOnce: true,
+  });
 
   const tx  = { duration: 0.75, ease: [0.22, 1, 0.36, 1] };
   const fL  = { hidden: { opacity: 0, x: -55 }, show: { opacity: 1, x: 0 } };
@@ -422,53 +710,87 @@ const AboutSection = () => {
             </motion.a>
           </motion.div>
 
-          {/* RIGHT — Earth */}
+          {/* RIGHT — Earth + pin legend */}
           <motion.div
             variants={fR} initial="hidden" animate={inView ? 'show' : 'hidden'}
             transition={{ ...tx, delay: 0.2 }}
-            className="relative w-full" style={{ height: 'clamp(260px, 50vw, 420px)' }}
+            className="w-full flex flex-col gap-3"
           >
-            {/* glow halo */}
+            {/* Globe canvas — fixed height container.
+                ref={globeRef} triggers the lazy-mount once within 300 px. */}
             <div
-              className="absolute pointer-events-none"
-              style={{
-                width: '55%', height: '55%',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%,-50%)',
-                background: isDark
-                  ? 'radial-gradient(circle, rgba(0,245,255,0.14) 0%, transparent 70%)'
-                  : 'radial-gradient(circle, rgba(0,119,187,0.12) 0%, transparent 70%)',
-                filter: 'blur(28px)',
-              }}
-            />
-            <EarthErrorBoundary isDark={isDark}>
-              <EarthScene isDark={isDark} />
-            </EarthErrorBoundary>
-            {/* Pin legend */}
-            <div
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3
-                         pointer-events-none"
-              style={{ whiteSpace: 'nowrap' }}
+              ref={globeRef}
+              className="relative w-full"
+              style={{ height: 'clamp(260px, 50vw, 420px)' }}
             >
+              {/* glow halo */}
               <div
-                className="flex items-center gap-1.5 font-code text-[10px] tracking-[0.18em]
-                           uppercase px-3 py-1 rounded-full"
-                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(8px)' }}
+                className="absolute pointer-events-none"
+                style={{
+                  width: '55%', height: '55%',
+                  top: '50%', left: '50%',
+                  transform: 'translate(-50%,-50%)',
+                  background: isDark
+                    ? 'radial-gradient(circle, rgba(0,245,255,0.14) 0%, transparent 70%)'
+                    : 'radial-gradient(circle, rgba(0,119,187,0.12) 0%, transparent 70%)',
+                  filter: 'blur(28px)',
+                }}
+              />
+              {/* Only mount the WebGL canvas once the globe is near the viewport.
+                  While waiting, show the lightweight CSS globe fallback so the
+                  space is never empty. */}
+              {globeNear ? (
+                <EarthErrorBoundary isDark={isDark}>
+                  <EarthScene isDark={isDark} />
+                </EarthErrorBoundary>
+              ) : (
+                <GlobeFallback isDark={isDark} />
+              )}
+            </div>
+
+            {/* Pin legend — sits below the canvas, always visible */}
+            <div className="flex items-center justify-center gap-5">
+              {/* India */}
+              <div
+                className="flex items-center gap-2.5 px-4 py-2 rounded-xl font-code text-[11px] tracking-wider uppercase"
+                style={{
+                  background: 'rgba(255,51,51,0.08)',
+                  border: '1px solid rgba(255,51,51,0.30)',
+                }}
               >
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ff3333', boxShadow: '0 0 6px #ff3333', flexShrink: 0 }} />
-                <span style={{ color: '#ff6666' }}>India</span>
+                <span style={{
+                  width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
+                  background: '#ff3333', boxShadow: '0 0 8px #ff3333cc',
+                }} />
+                <span style={{ color: '#ff8080' }}>India</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 9, textTransform: 'none', letterSpacing: '0.05em' }}>· origin</span>
               </div>
+
+              {/* divider */}
+              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>→</span>
+
+              {/* Troy, NY */}
               <div
-                className="flex items-center gap-1.5 font-code text-[10px] tracking-[0.18em]
-                           uppercase px-3 py-1 rounded-full"
-                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(8px)' }}
+                className="flex items-center gap-2.5 px-4 py-2 rounded-xl font-code text-[11px] tracking-wider uppercase"
+                style={{
+                  background: 'rgba(0,204,102,0.08)',
+                  border: '1px solid rgba(0,204,102,0.30)',
+                }}
               >
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00cc66', boxShadow: '0 0 6px #00cc66', flexShrink: 0 }} />
+                <span style={{
+                  width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
+                  background: '#00cc66', boxShadow: '0 0 8px #00cc6699',
+                }} />
                 <span style={{ color: '#00cc66' }}>Troy, NY</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 9, textTransform: 'none', letterSpacing: '0.05em' }}>· current</span>
               </div>
             </div>
           </motion.div>
         </div>
+
+        {/* GitHub Contributions Heatmap */}
+        <GitHubContributions cyan={cyan} inView={inView} />
+
       </div>
     </section>
   );

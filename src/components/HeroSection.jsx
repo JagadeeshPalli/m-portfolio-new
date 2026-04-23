@@ -9,6 +9,7 @@ import { MdOutlineArrowRightAlt, MdKeyboardArrowDown } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
 import { useLenis } from '../context/LenisContext';
 import { useInView } from 'react-intersection-observer';
+import TerminalWidget from './TerminalWidget';
 
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@$&*';
 
@@ -115,6 +116,15 @@ const HeroSection = () => {
   const [showRole,    setShowRole]    = useState(false);
   const [showCTAs,    setShowCTAs]    = useState(false);
   const [scrambleKey, setScrambleKey] = useState(0);
+  const [availability, setAvailability] = useState({ available: true, status: 'Available for opportunities', detail: '' });
+
+  /* Fetch live availability config from /public/availability.json */
+  useEffect(() => {
+    fetch('/availability.json')
+      .then(r => r.json())
+      .then(setAvailability)
+      .catch(() => {}); /* silently keep default on failure */
+  }, []);
 
   /* Re-scramble name every time hero re-enters the viewport */
   const entryCount = useRef(0);
@@ -178,8 +188,8 @@ const HeroSection = () => {
   /* cascade: name settled → role → CTAs */
   useEffect(() => {
     if (!nameDone) return;
-    const t1 = setTimeout(() => setShowRole(true),  220);
-    const t2 = setTimeout(() => setShowCTAs(true),  700);
+    const t1 = setTimeout(() => setShowRole(true),  160);  // was 220
+    const t2 = setTimeout(() => setShowCTAs(true),  460);  // was 700
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [nameDone]);
 
@@ -219,19 +229,20 @@ const HeroSection = () => {
   );
 
   /*
-   * Scramble timing — deliberately slowed for a more dramatic reveal:
-   *   stagger  62 → 90 ms/char
-   *   duration 440 → 620 ms/char settle window
-   * JAGADEESH (9) total: 280 + 9×90 + 620 = ~1.7 s
-   * PALLI     (5) total: lastDelay + 5×90 + 620
+   * Scramble timing — snappy but still dramatic:
+   *   stagger  48 ms/char   (was 90)
+   *   duration 340 ms/char  (was 620)
+   * JAGADEESH (9): 160 + 9×48 + 340 = ~932 ms → settles ≈ 0.93 s
+   * PALLI     (5): starts at ~852 ms, settles ≈ 1.43 s
+   * Role panel visible: ~1.6 s   CTAs visible: ~1.9 s
    */
-  const SCRAMBLE_STAGGER   = 90;
-  const SCRAMBLE_DURATION  = 620;
+  const SCRAMBLE_STAGGER   = 48;
+  const SCRAMBLE_DURATION  = 340;
   const FIRST      = 'JAGADEESH';
   const LAST       = 'PALLI';
-  const firstDelay = 280;
+  const firstDelay = 160;
   const firstTotal = firstDelay + FIRST.length * SCRAMBLE_STAGGER + SCRAMBLE_DURATION;
-  const lastDelay  = firstTotal - 150; /* start LAST slightly before FIRST fully settles */
+  const lastDelay  = firstTotal - 80; /* start LAST just before FIRST finishes */
 
   return (
     <section
@@ -349,13 +360,15 @@ const HeroSection = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: '50%',
-                  background: '#00cc66',
-                  boxShadow: '0 0 0 3px rgba(0,204,102,0.2), 0 0 10px #00cc66',
+                  background: availability.available ? '#00cc66' : '#ff4444',
+                  boxShadow: availability.available
+                    ? '0 0 0 3px rgba(0,204,102,0.2), 0 0 10px #00cc66'
+                    : '0 0 0 3px rgba(255,68,68,0.2), 0 0 10px #ff4444',
                   flexShrink: 0,
                   animation: 'statusPulse 2.4s ease-in-out infinite',
                 }} />
-                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'rgba(0,204,102,0.7)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                  Available for opportunities
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: availability.available ? 'rgba(0,204,102,0.7)' : 'rgba(255,68,68,0.7)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                  {availability.status}
                 </span>
               </div>
 
@@ -461,6 +474,7 @@ const HeroSection = () => {
                   <AiOutlineCloudDownload size={17} /> Resume
                 </CyberBtn>
               </div>
+              <TerminalWidget cyan={cyan} amber={amber} />
             </motion.div>
           )}
         </AnimatePresence>
