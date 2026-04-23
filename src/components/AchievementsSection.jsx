@@ -203,7 +203,7 @@ const AchievementsSection = () => {
           transition={{ duration: 0.6 }}
           className="mb-14 text-center"
         >
-          <p className="section-tag mb-2">// milestones</p>
+          <p className="section-tag mb-2">{'// milestones'}</p>
           <h2 className="section-heading">
             <ScrambleHeading text="Achievements" stagger={60} duration={500} />
             <span style={{ color: cyan }}>.</span>
