@@ -21,7 +21,7 @@ const CERTS = [
     category: 'microsoft',
     description: 'Foundational knowledge of AI and machine learning concepts, Azure AI services, and responsible AI principles.',
     skills: ['Machine Learning', 'Computer Vision', 'NLP', 'Azure Cognitive Services'],
-    verifyUrl: 'https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/',
+    verifyUrl: 'https://learn.microsoft.com/en-us/users/jagadeeshpalli-7852/credentials/eec7daa757ae6799',
   },
   {
     id: 2,
@@ -33,7 +33,7 @@ const CERTS = [
     category: 'microsoft',
     description: 'Designing and implementing Microsoft Azure AI solutions using Cognitive Services, ML, and Knowledge Mining.',
     skills: ['Azure OpenAI', 'Bot Framework', 'Form Recognizer', 'Azure ML'],
-    verifyUrl: 'https://learn.microsoft.com/en-us/certifications/azure-ai-engineer/',
+    verifyUrl: 'https://learn.microsoft.com/en-us/users/jagadeeshpalli-7852/credentials/71bdc6b70899d600',
   },
   {
     id: 3,
@@ -45,7 +45,7 @@ const CERTS = [
     category: 'oracle',
     description: 'Core concepts of AI and ML on Oracle Cloud Infrastructure, including generative AI and LLM fundamentals.',
     skills: ['Oracle GenAI', 'OCI Data Science', 'LLMs', 'Vector Databases'],
-    verifyUrl: 'https://education.oracle.com/oracle-cloud-infrastructure-ai-foundations-associate',
+    verifyUrl: 'https://catalog-education.oracle.com/ords/certview/sharebadge?id=1CAE1B07EEBE022AEE1CC669CA3BD3102EE12F6A12888A4B1519CA6922BABEFF',
   },
   {
     id: 4,
@@ -57,7 +57,7 @@ const CERTS = [
     category: 'oracle',
     description: 'Architecting Oracle Database deployments on AWS, covering migration, high availability, and cloud-native patterns.',
     skills: ['Oracle DB on AWS', 'RDS', 'RAC', 'Data Migration', 'High Availability'],
-    verifyUrl: 'https://education.oracle.com/',
+    verifyUrl: 'https://catalog-education.oracle.com/ords/certview/sharebadge?id=F665AA3194AB05ED51ACCA1A564077BA3D3875F58D3097E3F7DFAF95365A6386',
     secondIcon: SiOracle,
   },
 ];
