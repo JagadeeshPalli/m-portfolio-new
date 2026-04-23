@@ -2,7 +2,9 @@
 
 A next-generation personal portfolio built from scratch with a focus on visual depth, performance, and interactivity. Features a live 3D Earth globe, matrix-scramble text animations, particle networks, and a full dark/light theme system.
 
-**Live site → [jagadeeshpalli-portfolio-m.netlify.app](https://jagadeeshpalli-portfolio-m.netlify.app/)**
+**Live site → [71868d70.m-portfolio-new.pages.dev](https://71868d70.m-portfolio-new.pages.dev/)**
+
+> Also available on Netlify: [jagadeeshpalli-portfolio-m.netlify.app](https://jagadeeshpalli-portfolio-m.netlify.app/)
 
 ---
 
