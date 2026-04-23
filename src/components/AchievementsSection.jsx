@@ -6,9 +6,8 @@ import ScrambleHeading from './ScrambleHeading';
 import { MdVerified } from 'react-icons/md';
 import { BsTrophyFill } from 'react-icons/bs';
 import { HiDocumentText } from 'react-icons/hi';
-import { SiHuggingface } from 'react-icons/si';
 import { AiFillStar } from 'react-icons/ai';
-import { FaRocket, FaAward, FaChartLine } from 'react-icons/fa';
+import { FaRocket, FaAward, FaChartLine, FaBrain } from 'react-icons/fa';
 
 /* ══════════════════════════════════════════════════════
    ACHIEVEMENT DATA
@@ -36,7 +35,7 @@ const ACHIEVEMENTS = [
   },
   {
     id: 3,
-    icon: SiHuggingface,
+    icon: FaBrain,
     title: 'NeuroVault AI — Live on Hugging Face',
     org: 'Personal Project',
     year: '2024',
