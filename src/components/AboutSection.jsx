@@ -253,10 +253,11 @@ const LocationPin = ({ coords, color, glowColor }) => {
 const EarthGroup = ({ initialRotY = 0, sunDirWorld = [1, 0, 0] }) => {
   const groupRef = useRef();
 
-  /* Load day + city-lights textures in parallel (Suspense waits for both) */
+  /* Load day + city-lights textures in parallel (Suspense waits for both).
+     Night texture is served locally from /public to avoid CDN restrictions. */
   const [dayTex, nightTex] = useLoader(TextureLoader, [
     'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-    'https://threejs.org/examples/textures/planets/earth_lights_2048.jpg',
+    '/earth_lights_2048.jpg',
   ]);
 
   /* Stable uniforms — created once, never recreated */
