@@ -615,6 +615,15 @@ const AboutSection = () => {
 
   const { ref, inView } = useInView({ threshold: 0.12, triggerOnce: true });
 
+  /* Lazy-mount the Three.js Canvas: only create the WebGL context once the
+     globe container is within 300 px of the viewport.  triggerOnce keeps it
+     mounted after the first entry so it doesn't tear down mid-interaction. */
+  const { ref: globeRef, inView: globeNear } = useInView({
+    threshold:   0,
+    rootMargin:  '300px',
+    triggerOnce: true,
+  });
+
   const tx  = { duration: 0.75, ease: [0.22, 1, 0.36, 1] };
   const fL  = { hidden: { opacity: 0, x: -55 }, show: { opacity: 1, x: 0 } };
   const fR  = { hidden: { opacity: 0, x:  55 }, show: { opacity: 1, x: 0 } };
@@ -707,8 +716,13 @@ const AboutSection = () => {
             transition={{ ...tx, delay: 0.2 }}
             className="w-full flex flex-col gap-3"
           >
-            {/* Globe canvas — fixed height container */}
-            <div className="relative w-full" style={{ height: 'clamp(260px, 50vw, 420px)' }}>
+            {/* Globe canvas — fixed height container.
+                ref={globeRef} triggers the lazy-mount once within 300 px. */}
+            <div
+              ref={globeRef}
+              className="relative w-full"
+              style={{ height: 'clamp(260px, 50vw, 420px)' }}
+            >
               {/* glow halo */}
               <div
                 className="absolute pointer-events-none"
@@ -722,9 +736,16 @@ const AboutSection = () => {
                   filter: 'blur(28px)',
                 }}
               />
-              <EarthErrorBoundary isDark={isDark}>
-                <EarthScene isDark={isDark} />
-              </EarthErrorBoundary>
+              {/* Only mount the WebGL canvas once the globe is near the viewport.
+                  While waiting, show the lightweight CSS globe fallback so the
+                  space is never empty. */}
+              {globeNear ? (
+                <EarthErrorBoundary isDark={isDark}>
+                  <EarthScene isDark={isDark} />
+                </EarthErrorBoundary>
+              ) : (
+                <GlobeFallback isDark={isDark} />
+              )}
             </div>
 
             {/* Pin legend — sits below the canvas, always visible */}
