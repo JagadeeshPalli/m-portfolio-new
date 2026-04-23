@@ -35,39 +35,6 @@ const SOCIALS = [
 ];
 
 /* ══════════════════════════════════════════════════════
-   GLITCH TEXT COMPONENT
-══════════════════════════════════════════════════════ */
-const GlitchText = ({ text, cyan }) => (
-  <span className="relative inline-block" style={{ color: 'var(--text-primary)' }}>
-    {text}
-    <span
-      className="absolute inset-0 pointer-events-none select-none"
-      aria-hidden="true"
-      style={{
-        color:     cyan,
-        clipPath:  'polygon(0 30%, 100% 30%, 100% 50%, 0 50%)',
-        animation: 'glitchTop 4s infinite',
-        opacity:   0.7,
-      }}
-    >
-      {text}
-    </span>
-    <span
-      className="absolute inset-0 pointer-events-none select-none"
-      aria-hidden="true"
-      style={{
-        color:     'var(--accent-amber)',
-        clipPath:  'polygon(0 60%, 100% 60%, 100% 75%, 0 75%)',
-        animation: 'glitchBot 4s infinite',
-        opacity:   0.6,
-      }}
-    >
-      {text}
-    </span>
-  </span>
-);
-
-/* ══════════════════════════════════════════════════════
    CONTACT SECTION
 ══════════════════════════════════════════════════════ */
 const Contact = () => {
@@ -158,7 +125,7 @@ const Contact = () => {
 
           {/* heading */}
           <motion.div {...fadeUp()} className="mb-14 text-center">
-            <p className="section-tag mb-2">// get in touch</p>
+            <p className="section-tag mb-2">{'// get in touch'}</p>
             <h2 className="section-heading">
               <ScrambleHeading text="Let's Connect" stagger={68} duration={520} />
               <span style={{ color: cyan }}>.</span>

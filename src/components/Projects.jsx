@@ -306,7 +306,7 @@ const Projects = () => {
           transition={{ duration: 0.6 }}
           className="mb-12 text-center"
         >
-          <p className="section-tag mb-2">// what i've built</p>
+          <p className="section-tag mb-2">{"// what i've built"}</p>
           <h2 className="section-heading">
             <ScrambleHeading text="Featured Projects" stagger={58} duration={490} />
             <span style={{ color: cyan }}>.</span>

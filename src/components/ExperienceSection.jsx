@@ -326,7 +326,7 @@ const ExperienceSection = () => {
           transition={{ duration: 0.6 }}
           className="mb-16 text-center"
         >
-          <p className="section-tag mb-2">// career path</p>
+          <p className="section-tag mb-2">{'// career path'}</p>
           <h2 className="section-heading">
             <ScrambleHeading text="Work Experience" stagger={60} duration={500} />
             <span style={{ color: cyan }}>.</span>
