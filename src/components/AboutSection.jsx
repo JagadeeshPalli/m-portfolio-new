@@ -82,13 +82,22 @@ class EarthErrorBoundary extends Component {
   }
 }
 
-/* ── India's lon/lat → unit-sphere position ── */
-const LAT = 20.5937 * (Math.PI / 180);
-const LON = 78.9629 * (Math.PI / 180);
-const INDIA = [
-  Math.cos(LAT) * Math.sin(LON),
-  Math.sin(LAT),
-  Math.cos(LAT) * Math.cos(LON),
+/* ── India lon/lat → unit-sphere ── */
+const LAT_IN  = 20.5937 * (Math.PI / 180);
+const LON_IN  = 78.9629 * (Math.PI / 180);
+const INDIA   = [
+  Math.cos(LAT_IN) * Math.sin(LON_IN),
+  Math.sin(LAT_IN),
+  Math.cos(LAT_IN) * Math.cos(LON_IN),
+];
+
+/* ── Troy, NY lon/lat → unit-sphere  (lon is West → negative) ── */
+const LAT_NY  = 42.7284 * (Math.PI / 180);
+const LON_NY  = -73.6918 * (Math.PI / 180);
+const TROY    = [
+  Math.cos(LAT_NY) * Math.sin(LON_NY),
+  Math.sin(LAT_NY),
+  Math.cos(LAT_NY) * Math.cos(LON_NY),
 ];
 
 /* ════════════════════════════════════════════════════
@@ -138,19 +147,47 @@ const StarField = () => {
   );
 };
 
-/* Rotating Earth mesh */
-const EarthMesh = () => {
-  const ref = useRef();
-  const texture = useLoader(
+/* ── Single location pin (stable, no orbit) ── */
+const LocationPin = ({ coords, color, glowColor }) => {
+  const R   = 1.024;
+  const pos = [coords[0] * R, coords[1] * R, coords[2] * R];
+  return (
+    <group position={pos}>
+      {/* solid core */}
+      <mesh>
+        <sphereGeometry args={[0.024, 14, 14]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      {/* soft halo */}
+      <mesh>
+        <sphereGeometry args={[0.044, 14, 14]} />
+        <meshBasicMaterial color={glowColor} transparent opacity={0.28} />
+      </mesh>
+    </group>
+  );
+};
+
+/* ── Rotating group: Earth sphere + both pins co-rotate together ── */
+const EarthGroup = () => {
+  const groupRef = useRef();
+  const texture  = useLoader(
     TextureLoader,
     'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
   );
-  useFrame((_, dt) => { ref.current.rotation.y += dt * 0.09; });
+  useFrame((_, dt) => { groupRef.current.rotation.y += dt * 0.09; });
+
   return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[1, 64, 64]} />
-      <meshStandardMaterial map={texture} />
-    </mesh>
+    <group ref={groupRef}>
+      {/* Earth surface */}
+      <mesh>
+        <sphereGeometry args={[1, 64, 64]} />
+        <meshStandardMaterial map={texture} />
+      </mesh>
+      {/* India — red */}
+      <LocationPin coords={INDIA} color="#ff3333" glowColor="#ff6666" />
+      {/* Troy, NY — green */}
+      <LocationPin coords={TROY}  color="#00cc66" glowColor="#00ff88" />
+    </group>
   );
 };
 
@@ -166,28 +203,6 @@ const Atmosphere = ({ isDark }) => (
     />
   </mesh>
 );
-
-/* Pulsing India beacon — two offset ping spheres */
-const IndiaPin = ({ isDark }) => {
-  const r1 = useRef();
-  const r2 = useRef();
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    const p1 = (t % 2) / 2;
-    const p2 = ((t + 1) % 2) / 2;
-    if (r1.current) { r1.current.scale.setScalar(1 + p1 * 4.5); r1.current.material.opacity = (1 - p1) * 0.65; }
-    if (r2.current) { r2.current.scale.setScalar(1 + p2 * 4.5); r2.current.material.opacity = (1 - p2) * 0.65; }
-  });
-  const R   = 1.02;
-  const pos = [INDIA[0] * R, INDIA[1] * R, INDIA[2] * R];
-  return (
-    <group position={pos}>
-      <mesh><sphereGeometry args={[0.018, 10, 10]} /><meshBasicMaterial color="#ff4444" /></mesh>
-      <mesh ref={r1}><sphereGeometry args={[0.018, 10, 10]} /><meshBasicMaterial color="#ff6666" transparent opacity={0.6} /></mesh>
-      <mesh ref={r2}><sphereGeometry args={[0.018, 10, 10]} /><meshBasicMaterial color="#ff9999" transparent opacity={0.4} /></mesh>
-    </group>
-  );
-};
 
 /* Fallback while texture loads */
 const EarthFallback = () => (
@@ -209,10 +224,9 @@ const EarthScene = ({ isDark }) => (
     {isDark && <StarField />}
 
     <Suspense fallback={<EarthFallback />}>
-      <EarthMesh />
+      <EarthGroup />
     </Suspense>
     <Atmosphere isDark={isDark} />
-    <IndiaPin   isDark={isDark} />
     <Controls />
   </Canvas>
 );
@@ -369,16 +383,28 @@ const AboutSection = () => {
             <EarthErrorBoundary isDark={isDark}>
               <EarthScene isDark={isDark} />
             </EarthErrorBoundary>
-            {/* India label */}
+            {/* Pin legend */}
             <div
-              className="absolute bottom-6 left-1/2 -translate-x-1/2 font-code text-[10px]
-                         tracking-[0.25em] uppercase px-3 py-1 rounded-full pointer-events-none"
-              style={{
-                background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-                color: '#ff6666', backdropFilter: 'blur(8px)',
-              }}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3
+                         pointer-events-none"
+              style={{ whiteSpace: 'nowrap' }}
             >
-              📍 India — Origin
+              <div
+                className="flex items-center gap-1.5 font-code text-[10px] tracking-[0.18em]
+                           uppercase px-3 py-1 rounded-full"
+                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(8px)' }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ff3333', boxShadow: '0 0 6px #ff3333', flexShrink: 0 }} />
+                <span style={{ color: '#ff6666' }}>India</span>
+              </div>
+              <div
+                className="flex items-center gap-1.5 font-code text-[10px] tracking-[0.18em]
+                           uppercase px-3 py-1 rounded-full"
+                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(8px)' }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00cc66', boxShadow: '0 0 6px #00cc66', flexShrink: 0 }} />
+                <span style={{ color: '#00cc66' }}>Troy, NY</span>
+              </div>
             </div>
           </motion.div>
         </div>

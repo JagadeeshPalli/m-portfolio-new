@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useTheme } from '../context/ThemeContext';
@@ -139,11 +139,20 @@ const TimelineLine = ({ cyan, inView }) => (
    EXPERIENCE CARD (left-anchored layout)
 ══════════════════════════════════════════════════════ */
 const ExpCard = ({ exp, cyan, amber }) => {
-  const { ref, inView } = useInView({ threshold: 0.15, triggerOnce: true });
+  const { ref: inRef, inView } = useInView({ threshold: 0.15, triggerOnce: true });
   const accent = exp.badgeColor === '#ff9500' ? amber : cyan;
 
+  /* mouse-following gradient border */
+  const [glow, setGlow]   = useState({ x: 50, y: 50 });
+  const [hover, setHover] = useState(false);
+
+  const glowBg = hover
+    ? `linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+       radial-gradient(circle at ${glow.x}% ${glow.y}%, ${accent}99 0%, ${accent}28 42%, transparent 68%) border-box`
+    : 'var(--glass-bg)';
+
   return (
-    <div ref={ref} className="relative mb-8 last:mb-0">
+    <div ref={inRef} className="relative mb-8 last:mb-0">
 
       {/* Connector dot on the timeline — desktop only */}
       <motion.div
@@ -180,20 +189,22 @@ const ExpCard = ({ exp, cyan, amber }) => {
         initial={{ opacity: 0, x: 40 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        onMouseMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setGlow({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         className="relative w-full p-4 md:p-6 rounded-2xl overflow-hidden"
         style={{
-          background:           'var(--glass-bg)',
-          border:               '1px solid var(--glass-border)',
+          background:           glowBg,
+          border:               hover ? '1.5px solid transparent' : '1px solid var(--glass-border)',
           backdropFilter:       'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
-          boxShadow:            '0 8px 32px rgba(0,0,0,0.25)',
+          boxShadow:            hover ? `0 12px 40px rgba(0,0,0,0.35), 0 0 28px ${accent}22` : '0 8px 32px rgba(0,0,0,0.25)',
+          transform:            hover ? 'translateY(-3px)' : 'translateY(0)',
+          transition:           'box-shadow 0.25s, transform 0.25s',
         }}
-        whileHover={{
-          borderColor: accent,
-          boxShadow:   `0 8px 32px rgba(0,0,0,0.3), 0 0 24px ${accent}25`,
-          y:           -3,
-        }}
-        transition={{ duration: 0.22 }}
       >
         {/* top accent bar */}
         <div

@@ -4,12 +4,13 @@ import { useLenis } from '../context/LenisContext';
 import { useTheme } from '../context/ThemeContext';
 
 const NAV_LINKS = [
-  { id: 'home',       label: 'Home'       },
-  { id: 'about',      label: 'About'      },
-  { id: 'skills',     label: 'Skills'     },
-  { id: 'experience', label: 'Experience' },
-  { id: 'projects',   label: 'Projects'   },
-  { id: 'contact',    label: 'Contact'    },
+  { id: 'home',            label: 'Home'     },
+  { id: 'about',           label: 'About'    },
+  { id: 'skills',          label: 'Skills'   },
+  { id: 'experience',      label: 'Experience' },
+  { id: 'certifications',  label: 'Certs'    },
+  { id: 'projects',        label: 'Projects' },
+  { id: 'contact',         label: 'Contact'  },
 ];
 
 const Navbar = () => {
@@ -131,7 +132,7 @@ const Navbar = () => {
 
             {/* Mobile hamburger */}
             <motion.button
-              className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-1.5"
+              className="md:hidden flex flex-col justify-center items-center w-11 h-11 gap-1.5"
               onClick={() => setMenuOpen(v => !v)}
               aria-label="Toggle menu"
               whileTap={{ scale: 0.9 }}
@@ -176,7 +177,7 @@ const Navbar = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.06 + i * 0.06 }}
                 onClick={() => navigate(link.id)}
-                className="font-display font-bold text-3xl tracking-wide"
+                className="font-display font-bold text-2xl sm:text-3xl tracking-wide"
                 style={{ color: activeId === link.id ? cyan : 'var(--text-secondary)' }}
                 whileHover={{ color: cyan, scale: 1.06 }}
               >

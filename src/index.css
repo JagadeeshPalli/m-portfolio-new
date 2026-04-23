@@ -438,3 +438,8 @@ html.lenis {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(0,204,102,0.20), 0 0 10px #00cc66; }
+  50%       { box-shadow: 0 0 0 6px rgba(0,204,102,0.06), 0 0 18px #00cc6699; }
+}

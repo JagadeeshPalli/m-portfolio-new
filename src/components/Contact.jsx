@@ -80,6 +80,17 @@ const Contact = () => {
   const [sent,    setSent]    = useState(false);
   const [sending, setSending] = useState(false);
 
+  /* mouse-glow state for left + right cards */
+  const [glowL,  setGlowL]  = useState({ x: 50, y: 50 });
+  const [hoverL, setHoverL] = useState(false);
+  const [glowR,  setGlowR]  = useState({ x: 50, y: 50 });
+  const [hoverR, setHoverR] = useState(false);
+
+  const makeGlowBg = (hover, gx, gy, accent) => hover
+    ? `linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+       radial-gradient(circle at ${gx}% ${gy}%, ${accent}99 0%, ${accent}28 42%, transparent 68%) border-box`
+    : 'var(--glass-bg)';
+
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = (e) => {
@@ -170,12 +181,18 @@ const Contact = () => {
 
               <div
                 className="relative p-6 rounded-2xl"
+                onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setGlowL({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
+                onMouseEnter={() => setHoverL(true)}
+                onMouseLeave={() => setHoverL(false)}
                 style={{
-                  background:     'var(--glass-bg)',
-                  border:         `1.5px solid ${cyan}55`,
+                  background:     makeGlowBg(hoverL, glowL.x, glowL.y, cyan),
+                  border:         hoverL ? '1.5px solid transparent' : `1.5px solid ${cyan}50`,
                   backdropFilter: 'blur(14px)',
                   WebkitBackdropFilter: 'blur(14px)',
-                  boxShadow:      `0 4px 24px rgba(0,0,0,0.2), 0 0 24px ${cyan}12, inset 0 1px 0 ${cyan}18`,
+                  boxShadow:      hoverL
+                    ? `0 12px 40px rgba(0,0,0,0.3), 0 0 30px ${cyan}22`
+                    : `0 4px 24px rgba(0,0,0,0.2), 0 0 20px ${cyan}10`,
+                  transition:     'box-shadow 0.25s',
                 }}
               >
                 {/* top accent bar */}
@@ -258,12 +275,18 @@ const Contact = () => {
               <form
                 onSubmit={handleSubmit}
                 className="relative p-6 rounded-2xl flex flex-col gap-4"
+                onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setGlowR({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
+                onMouseEnter={() => setHoverR(true)}
+                onMouseLeave={() => setHoverR(false)}
                 style={{
-                  background:     'var(--glass-bg)',
-                  border:         `1.5px solid ${cyan}55`,
+                  background:     makeGlowBg(hoverR, glowR.x, glowR.y, cyan),
+                  border:         hoverR ? '1.5px solid transparent' : `1.5px solid ${cyan}50`,
                   backdropFilter: 'blur(14px)',
                   WebkitBackdropFilter: 'blur(14px)',
-                  boxShadow:      `0 4px 24px rgba(0,0,0,0.2), 0 0 24px ${cyan}12, inset 0 1px 0 ${cyan}18`,
+                  boxShadow:      hoverR
+                    ? `0 12px 40px rgba(0,0,0,0.3), 0 0 30px ${cyan}22`
+                    : `0 4px 24px rgba(0,0,0,0.2), 0 0 20px ${cyan}10`,
+                  transition:     'box-shadow 0.25s',
                 }}
               >
                 {/* top accent bar */}

@@ -97,7 +97,13 @@ const TABS = [
 ══════════════════════════════════════════════════════ */
 const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
   const [hovered, setHovered] = useState(false);
+  const [glow,    setGlow]    = useState({ x: 50, y: 50 });
   const accent = project.featured ? cyan : amber;
+
+  const glowBg = hovered
+    ? `linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+       radial-gradient(circle at ${glow.x}% ${glow.y}%, ${accent}99 0%, ${accent}28 42%, transparent 68%) border-box`
+    : 'var(--glass-bg)';
 
   return (
     <motion.div
@@ -106,6 +112,10 @@ const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
       transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setGlow({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
+      }}
     >
       <Tilt
         tiltMaxAngleX={8}
@@ -121,14 +131,14 @@ const ProjectCard = ({ project, index, inView, cyan, amber, isDark }) => {
         <div
           className="relative rounded-2xl overflow-hidden h-full flex flex-col"
           style={{
-            background:     'var(--glass-bg)',
-            border:         `1px solid ${hovered ? accent : 'var(--glass-border)'}`,
+            background:     glowBg,
+            border:         hovered ? '1.5px solid transparent' : '1px solid var(--glass-border)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
             boxShadow:      hovered
               ? `0 16px 48px rgba(0,0,0,0.3), 0 0 32px ${accent}20`
               : '0 4px 24px rgba(0,0,0,0.2)',
-            transition: 'border-color 0.25s, box-shadow 0.25s',
+            transition: 'box-shadow 0.25s',
           }}
         >
           {/* top accent bar */}

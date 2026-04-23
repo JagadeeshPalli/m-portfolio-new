@@ -89,42 +89,59 @@ const GROUPS = [
 ];
 
 /* ══════════════════════════════════════════════════════
-   SINGLE SKILL CARD
+   SINGLE SKILL CARD  — macOS Dock magnification
+   • scales from bottom-center (like Dock items)
+   • spring physics so it feels alive
+   • mouse-following gradient border glow
 ══════════════════════════════════════════════════════ */
 const SkillCard = ({ skill, index, inView, cardBg, borderColor }) => {
   const [hovered, setHovered] = useState(false);
+  const [glow,    setGlow]    = useState({ x: 50, y: 50 });
+
+  const glowBg = hovered
+    ? `linear-gradient(${cardBg}, ${cardBg}) padding-box,
+       radial-gradient(circle at ${glow.x}% ${glow.y}%, ${skill.color}b0 0%, ${skill.color}28 48%, transparent 72%) border-box`
+    : cardBg;
 
   return (
+    /* Entrance animation wrapper — keeps the slide-up fade-in separate */
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.4, delay: index * 0.045, ease: 'easeOut' }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
+      /* z-index via style so hovered card overlays its neighbours */
+      style={{ position: 'relative', zIndex: hovered ? 20 : 1 }}
     >
+      {/* Dock magnification — spring scale from bottom-center */}
       <motion.div
-        animate={{
-          y:         hovered ? -6 : 0,
-          boxShadow: hovered
-            ? `0 8px 30px ${skill.color}40, 0 0 0 1px ${skill.color}60`
-            : `0 2px 8px rgba(0,0,0,0.15)`,
-          borderColor: hovered ? skill.color : borderColor,
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => { setHovered(false); }}
+        onMouseMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setGlow({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
         }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        animate={{
+          scale:     hovered ? 1.38 : 1,
+          boxShadow: hovered
+            ? `0 16px 44px ${skill.color}55, 0 4px 16px rgba(0,0,0,0.25)`
+            : '0 2px 8px rgba(0,0,0,0.12)',
+        }}
+        transition={{ type: 'spring', stiffness: 380, damping: 26 }}
         className="flex flex-col items-center justify-center gap-2 sm:gap-2.5
                    px-2 sm:px-3 py-4 sm:py-5 rounded-xl cursor-default"
         style={{
-          background:  cardBg,
-          border:      `1px solid ${borderColor}`,
-          backdropFilter: 'blur(10px)',
-          minWidth: 'clamp(72px, 18vw, 88px)',
+          background:       glowBg,
+          border:           hovered ? '1px solid transparent' : `1px solid ${borderColor}`,
+          backdropFilter:   'blur(10px)',
+          minWidth:         'clamp(72px, 18vw, 88px)',
+          transformOrigin:  'bottom center',   /* scale grows upward */
         }}
       >
-        {/* icon */}
+        {/* icon — brightens to brand colour on hover */}
         <motion.span
           animate={{ color: hovered ? skill.color : 'var(--text-secondary)' }}
-          transition={{ duration: 0.2 }}
-          style={{ fontSize: 'clamp(22px, 5vw, 30px)', lineHeight: 1, display: 'flex' }}
+          transition={{ duration: 0.18 }}
+          style={{ fontSize: 'clamp(24px, 5vw, 32px)', lineHeight: 1, display: 'flex' }}
         >
           <skill.Icon />
         </motion.span>
@@ -134,7 +151,7 @@ const SkillCard = ({ skill, index, inView, cardBg, borderColor }) => {
           className="font-body text-[11px] font-medium text-center leading-tight"
           style={{
             color:      hovered ? 'var(--text-primary)' : 'var(--text-secondary)',
-            transition: 'color 0.2s',
+            transition: 'color 0.18s',
           }}
         >
           {skill.name}
@@ -239,7 +256,7 @@ const SkillsSection = () => {
             transition={{ duration: 0.3 }}
           >
             {visibleGroups.map(group => (
-              <div key={group.id} className="mb-10">
+              <div key={group.id} className="mb-10" style={{ overflow: 'visible' }}>
                 {/* group label */}
                 <div className="flex items-center gap-3 mb-5">
                   <span
@@ -254,8 +271,8 @@ const SkillsSection = () => {
                   />
                 </div>
 
-                {/* icon grid */}
-                <div className="flex flex-wrap gap-3">
+                {/* icon grid — overflow:visible so scaled cards aren't clipped */}
+                <div className="flex flex-wrap gap-3" style={{ overflow: 'visible' }}>
                   {group.skills.map((skill, i) => (
                     <SkillCard
                       key={skill.name}

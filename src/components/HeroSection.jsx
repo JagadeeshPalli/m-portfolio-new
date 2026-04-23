@@ -114,8 +114,14 @@ const HeroSection = () => {
   const [showRole,  setShowRole]  = useState(false);
   const [showCTAs,  setShowCTAs]  = useState(false);
 
-  /* Hero background is always dark — cinematic feel regardless of theme */
-  const HERO_BG = '#0a0a0a';
+  /*
+   * Dark  → near-black  (same cinematic look)
+   * Light → deep ocean-navy so the two themes look visually distinct
+   *          while keeping the particle background readable
+   */
+  const HERO_BG = isDark
+    ? '#0a0a0a'
+    : 'linear-gradient(135deg, #06102e 0%, #0c0a22 50%, #071428 100%)';
   const cyan    = '#00f5ff';
   const amber   = isDark ? '#ff9500' : '#e07800';
 
@@ -193,12 +199,20 @@ const HeroSection = () => {
     </motion.a>
   );
 
-  /* timing: first line starts at 280ms with 62ms/char stagger + 440ms duration */
+  /*
+   * Scramble timing — deliberately slowed for a more dramatic reveal:
+   *   stagger  62 → 90 ms/char
+   *   duration 440 → 620 ms/char settle window
+   * JAGADEESH (9) total: 280 + 9×90 + 620 = ~1.7 s
+   * PALLI     (5) total: lastDelay + 5×90 + 620
+   */
+  const SCRAMBLE_STAGGER   = 90;
+  const SCRAMBLE_DURATION  = 620;
   const FIRST      = 'JAGADEESH';
   const LAST       = 'PALLI';
   const firstDelay = 280;
-  const firstTotal = firstDelay + FIRST.length * 62 + 440;   /* ~1300ms */
-  const lastDelay  = firstTotal - 120; /* start LAST slightly before FIRST fully finishes */
+  const firstTotal = firstDelay + FIRST.length * SCRAMBLE_STAGGER + SCRAMBLE_DURATION;
+  const lastDelay  = firstTotal - 150; /* start LAST slightly before FIRST fully settles */
 
   return (
     <section
@@ -258,7 +272,7 @@ const HeroSection = () => {
           <ScrambleLine
             text={FIRST}
             delay={firstDelay}
-            stagger={62}
+            stagger={SCRAMBLE_STAGGER}
             onComplete={() => setLine1Done(true)}
             lineStyle={{
               display:       'block',
@@ -274,7 +288,7 @@ const HeroSection = () => {
           <ScrambleLine
             text={LAST}
             delay={lastDelay}
-            stagger={62}
+            stagger={SCRAMBLE_STAGGER}
             onComplete={() => setNameDone(true)}
             lineStyle={{
               display:       'block',
@@ -302,27 +316,88 @@ const HeroSection = () => {
           )}
         </AnimatePresence>
 
-        {/* Role */}
+        {/* ── Role panel ── */}
         <AnimatePresence>
           {showRole && (
             <motion.div
-              initial={{ opacity: 0, y: 14 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1,  y: 0  }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-1"
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-1 mt-2"
             >
-              <p
-                className="font-body font-semibold text-lg"
-                style={{ color: 'rgba(255,255,255,0.88)' }}
-              >
+              {/* Live status */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: '#00cc66',
+                  boxShadow: '0 0 0 3px rgba(0,204,102,0.2), 0 0 10px #00cc66',
+                  flexShrink: 0,
+                  animation: 'statusPulse 2.4s ease-in-out infinite',
+                }} />
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'rgba(0,204,102,0.7)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                  Available for opportunities
+                </span>
+              </div>
+
+              {/* Title */}
+              <p style={{
+                fontFamily: 'Space Grotesk',
+                fontSize: 'clamp(1.1rem, 2.6vw, 1.45rem)',
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.94)',
+                lineHeight: 1.15,
+                letterSpacing: '-0.01em',
+              }}>
                 Senior Software Engineer
               </p>
-              <p
-                className="font-body text-base"
-                style={{ color: 'rgba(255,255,255,0.48)' }}
-              >
-                Full-Stack Architect &amp; Cloud Developer
+
+              {/* Terminal-style subtitle */}
+              <p style={{
+                fontFamily: 'JetBrains Mono',
+                fontSize: 'clamp(0.72rem, 1.7vw, 0.85rem)',
+                color: `${cyan}80`,
+                marginTop: 5,
+                letterSpacing: '0.03em',
+              }}>
+                <span style={{ color: `${amber}70` }}>&gt;_&nbsp;</span>
+                Full-Stack Architect&nbsp;&nbsp;·&nbsp;&nbsp;Cloud Native&nbsp;&nbsp;·&nbsp;&nbsp;Microservices
               </p>
+
+              {/* Tech-stack chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 14 }}>
+                {[
+                  { label: 'Java / Spring Boot', accent: cyan },
+                  { label: 'React / Angular',    accent: cyan },
+                  { label: 'AWS · GCP · Azure',  accent: amber },
+                  { label: 'Docker / K8s',        accent: amber },
+                  { label: 'PostgreSQL · MongoDB', accent: cyan },
+                ].map(({ label, accent }) => (
+                  <span key={label} style={{
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 10,
+                    padding: '3px 10px',
+                    borderRadius: 5,
+                    background: `${accent}12`,
+                    border: `1px solid ${accent}35`,
+                    color: `${accent}c0`,
+                    letterSpacing: '0.04em',
+                  }}>
+                    {label}
+                  </span>
+                ))}
+                <span style={{
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 10,
+                  padding: '3px 10px',
+                  borderRadius: 5,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  color: 'rgba(255,255,255,0.4)',
+                  letterSpacing: '0.04em',
+                }}>
+                  @ NYS Dept, Troy NY
+                </span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -366,6 +441,35 @@ const HeroSection = () => {
                   <AiOutlineCloudDownload size={17} /> Resume
                 </CyberBtn>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Stats row — appears with CTAs ── */}
+        <AnimatePresence>
+          {showCTAs && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.55 }}
+              className="mt-8 flex flex-wrap items-center gap-5 sm:gap-8"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 18 }}
+            >
+              {[
+                { num: '5+',  label: 'Years Exp' },
+                { num: '4',   label: 'Companies'  },
+                { num: '20+', label: 'Projects'    },
+                { num: '3',   label: 'Cloud Certs' },
+              ].map(({ num, label }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                  <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 'clamp(1rem, 2.2vw, 1.25rem)', fontWeight: 700, color: cyan }}>
+                    {num}
+                  </span>
+                  <span style={{ fontFamily: 'Space Grotesk', fontSize: 11, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {label}
+                  </span>
+                </div>
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
