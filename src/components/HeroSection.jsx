@@ -9,6 +9,7 @@ import { MdOutlineArrowRightAlt, MdKeyboardArrowDown } from 'react-icons/md';
 import { useTheme } from '../context/ThemeContext';
 import { useLenis } from '../context/LenisContext';
 import { useInView } from 'react-intersection-observer';
+import TerminalWidget from './TerminalWidget';
 
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@$&*';
 
@@ -472,6 +473,7 @@ const HeroSection = () => {
                   <AiOutlineCloudDownload size={17} /> Resume
                 </CyberBtn>
               </div>
+              <TerminalWidget cyan={cyan} amber={amber} />
             </motion.div>
           )}
         </AnimatePresence>
