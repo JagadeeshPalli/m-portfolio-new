@@ -109,6 +109,6 @@
   <!-- Bottom URL bar -->
   <rect x="0" y="590" width="1200" height="40" fill="rgba(0,245,255,0.05)"/>
   <line x1="0" y1="590" x2="1200" y2="590" stroke="#00f5ff" stroke-width="0.5" opacity="0.25"/>
-  <text x="100" y="614" font-family="monospace" font-size="13" fill="rgba(255,255,255,0.35)" letter-spacing="2">jagadeeshpalli.dev</text>
+  <text x="100" y="614" font-family="monospace" font-size="13" fill="rgba(255,255,255,0.35)" letter-spacing="2">jagadeeshpalli-portfolio.pages.dev</text>
   <text x="1100" y="614" text-anchor="end" font-family="monospace" font-size="13" fill="rgba(0,245,255,0.45)" letter-spacing="2">@ NYS Dept, Troy NY</text>
 </svg>
