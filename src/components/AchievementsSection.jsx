@@ -3,11 +3,9 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useTheme } from '../context/ThemeContext';
 import ScrambleHeading from './ScrambleHeading';
-import { MdVerified } from 'react-icons/md';
 import { BsTrophyFill } from 'react-icons/bs';
-import { HiDocumentText } from 'react-icons/hi';
-import { AiFillStar } from 'react-icons/ai';
-import { FaRocket, FaAward, FaChartLine, FaBrain } from 'react-icons/fa';
+import { HiDocumentText, HiOutlineExternalLink } from 'react-icons/hi';
+import { FaChartLine, FaBrain } from 'react-icons/fa';
 
 /* ══════════════════════════════════════════════════════
    ACHIEVEMENT DATA
@@ -22,16 +20,18 @@ const ACHIEVEMENTS = [
     desc: 'Recognised among top performers company-wide for exceptional contributions and rapid growth as a Java Full Stack Developer.',
     color: '#ff9500',
     featured: true,
+    url: 'https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy8wNTYwNTdlMWUwZTgyMDc2L0VZckR3YnJZc21wTnBkSXVjWkdtcUl3QlpiZWNaWXpQakFCd2J0dUFqOVhVV3c%5FZT1LSllWSm0&cid=056057E1E0E82076&id=56057E1E0E82076%21sbac1c38ab2d84d6aa5d22e7191a6a88c&parId=56057E1E0E82076%21s317e96cb7c214f7094127f2146da888b&o=OneUp',
   },
   {
     id: 2,
     icon: HiDocumentText,
     title: 'Published Research Paper',
     org: 'International Journal of Computer Applications (IJCA)',
-    year: '2022',
+    year: '2020',
     desc: 'Authored and published a peer-reviewed research paper in the field of computer science and software engineering.',
     color: '#00f5ff',
     featured: true,
+    url: 'https://www.ijcaonline.org/archives/volume176/number13/31261-2020920042/',
   },
   {
     id: 3,
@@ -42,19 +42,10 @@ const ACHIEVEMENTS = [
     desc: 'Shipped a fully working RAG application supporting multi-LLM document chat (GPT-4o, Claude, Gemini, Llama) — deployed free on Hugging Face Spaces.',
     color: '#ff6b35',
     featured: true,
+    url: 'https://huggingface.co/spaces/JagadeeshRony/Neurovault',
   },
   {
     id: 4,
-    icon: MdVerified,
-    title: '4 Cloud Certifications',
-    org: 'Microsoft · Oracle · AWS',
-    year: '2023–2024',
-    desc: 'Earned Azure AI-900, Azure AI-102 (Engineer Associate), Oracle AI Foundations, and Oracle DB@AWS Architect Professional.',
-    color: '#0078d4',
-    featured: false,
-  },
-  {
-    id: 5,
     icon: FaChartLine,
     title: '30% API Latency Reduction',
     org: 'NYS Department',
@@ -62,36 +53,7 @@ const ACHIEVEMENTS = [
     desc: 'Architected high-performance Spring Boot APIs serving state-level workloads, reducing average response latency by 30% and improving uptime.',
     color: '#00cc66',
     featured: false,
-  },
-  {
-    id: 6,
-    icon: FaRocket,
-    title: '40% Faster Deployments',
-    org: 'Azilen Technologies',
-    year: '2024',
-    desc: 'Automated CI/CD pipelines with Jenkins, GitHub Actions, and Docker — cutting full deployment cycles by 40% across 20+ Agile sprints.',
-    color: '#a855f7',
-    featured: false,
-  },
-  {
-    id: 7,
-    icon: AiFillStar,
-    title: '95% On-Time Delivery',
-    org: 'Azilen Technologies',
-    year: '2024',
-    desc: 'Maintained a 95% on-time delivery rate across 20+ sprints through disciplined Agile execution with Jira and Git workflows.',
-    color: '#f7df1e',
-    featured: false,
-  },
-  {
-    id: 8,
-    icon: FaAward,
-    title: '5+ Years Full-Stack Experience',
-    org: '4 Companies · USA & India',
-    year: '2019–Present',
-    desc: 'Built production systems across government, fintech, insurance, and startup domains — from Spring Boot microservices to React frontends.',
-    color: '#00f5ff',
-    featured: false,
+    url: null,
   },
 ];
 
@@ -108,94 +70,85 @@ const AchCard = ({ item, index, inView }) => {
        radial-gradient(circle at ${glow.x}% ${glow.y}%, ${color}99 0%, ${color}28 42%, transparent 68%) border-box`
     : 'var(--glass-bg)';
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 36 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      onMouseMove={e => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setGlow({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="relative rounded-2xl p-5 flex flex-col gap-3"
-      style={{
-        background:     glowBg,
-        border:         hovered ? '1.5px solid transparent' : '1px solid var(--glass-border)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
-        boxShadow:      hovered
-          ? `0 12px 40px rgba(0,0,0,0.28), 0 0 28px ${color}18`
-          : '0 4px 20px rgba(0,0,0,0.18)',
-        transition:     'box-shadow 0.25s, transform 0.25s',
-        transform:      hovered ? 'translateY(-3px)' : 'translateY(0)',
-      }}
-    >
+  const cardStyle = {
+    background:           glowBg,
+    border:               hovered ? '1.5px solid transparent' : '1px solid var(--glass-border)',
+    backdropFilter:       'blur(14px)',
+    WebkitBackdropFilter: 'blur(14px)',
+    boxShadow:            hovered ? `0 12px 40px rgba(0,0,0,0.28), 0 0 28px ${color}18` : '0 4px 20px rgba(0,0,0,0.18)',
+    transition:           'box-shadow 0.25s, transform 0.25s',
+    transform:            hovered ? 'translateY(-3px)' : 'translateY(0)',
+    cursor:               item.url ? 'pointer' : 'default',
+    textDecoration:       'none',
+  };
+
+  const inner = (
+    <>
       {/* top bar */}
-      <div
-        className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-        style={{
-          background: hovered
-            ? `linear-gradient(90deg, ${color}, ${color}66, transparent)`
-            : `linear-gradient(90deg, ${color}55, transparent)`,
-          transition: 'background 0.3s',
-        }}
-      />
+      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+        style={{ background: hovered ? `linear-gradient(90deg,${color},${color}66,transparent)` : `linear-gradient(90deg,${color}55,transparent)`, transition: 'background 0.3s' }} />
 
       {/* icon + year row */}
       <div className="flex items-center justify-between">
-        <div
-          className="flex items-center justify-center rounded-xl"
-          style={{
-            width: 42, height: 42,
-            background: `${color}15`,
-            border: `1px solid ${color}35`,
-          }}
-        >
+        <div className="flex items-center justify-center rounded-xl"
+          style={{ width: 42, height: 42, background: `${color}15`, border: `1px solid ${color}35` }}>
           <Icon size={20} style={{ color }} />
         </div>
-
         <div className="flex items-center gap-2">
           {item.featured && (
-            <span
-              className="font-code text-[9px] tracking-wider uppercase px-2 py-0.5 rounded-full"
-              style={{ background: `${color}18`, border: `1px solid ${color}40`, color }}
-            >
+            <span className="font-code text-[9px] tracking-wider uppercase px-2 py-0.5 rounded-full"
+              style={{ background: `${color}18`, border: `1px solid ${color}40`, color }}>
               Featured
             </span>
           )}
-          <span
-            className="font-code text-[10px] tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            {item.year}
-          </span>
+          <span className="font-code text-[10px] tracking-wider" style={{ color: 'var(--text-muted)' }}>{item.year}</span>
         </div>
       </div>
 
       {/* text */}
       <div>
-        <h3
-          className="font-display font-bold text-sm leading-snug"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {item.title}
-        </h3>
-        <p
-          className="font-code text-[10px] tracking-wider mt-0.5"
-          style={{ color }}
-        >
-          {item.org}
-        </p>
+        <h3 className="font-display font-bold text-sm leading-snug" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
+        <p className="font-code text-[10px] tracking-wider mt-0.5" style={{ color }}>{item.org}</p>
       </div>
 
-      <p
-        className="font-body text-xs leading-relaxed"
-        style={{ color: 'var(--text-secondary)' }}
-      >
-        {item.desc}
-      </p>
+      <p className="font-body text-xs leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+
+      {/* link footer */}
+      <div className="flex items-center gap-1 mt-1">
+        {item.url ? (
+          <span className="font-code text-[10px] tracking-wider flex items-center gap-1"
+            style={{ color: hovered ? color : 'var(--text-muted)', transition: 'color 0.2s' }}>
+            <HiOutlineExternalLink size={11} /> View credential
+          </span>
+        ) : (
+          <span className="font-code text-[10px] tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            Internal achievement
+          </span>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 36 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      onMouseMove={e => { const r = e.currentTarget.getBoundingClientRect(); setGlow({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {item.url ? (
+        <a href={item.url} target="_blank" rel="noreferrer"
+          className="relative rounded-2xl p-5 flex flex-col gap-3 h-full"
+          style={cardStyle}>
+          {inner}
+        </a>
+      ) : (
+        <div className="relative rounded-2xl p-5 flex flex-col gap-3 h-full" style={cardStyle}>
+          {inner}
+        </div>
+      )}
     </motion.div>
   );
 };

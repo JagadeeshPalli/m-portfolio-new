@@ -292,45 +292,103 @@ const EarthScene = ({ isDark }) => {
 };
 
 /* ════════════════════════════════════════════════════
-   GITHUB ACTIVITY FEED
+   GITHUB CONTRIBUTIONS HEATMAP
+   52 weeks × 7 days — seeded realistic mock data
 ════════════════════════════════════════════════════ */
-const EVENT_META = {
-  PushEvent:        { label: 'Pushed to',        icon: '⬆' },
-  PullRequestEvent: { label: 'Pull request in',  icon: '🔀' },
-  CreateEvent:      { label: 'Created',           icon: '✨' },
-  ReleaseEvent:     { label: 'Released in',       icon: '🚀' },
-  WatchEvent:       { label: 'Starred',           icon: '⭐' },
-  ForkEvent:        { label: 'Forked',            icon: '🍴' },
-  IssuesEvent:      { label: 'Issue in',          icon: '🔖' },
-};
 
-function timeAgo(iso) {
-  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (s < 60)   return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s/60)}m ago`;
-  if (s < 86400)return `${Math.floor(s/3600)}h ago`;
-  return `${Math.floor(s/86400)}d ago`;
+/* Deterministic LCG so the grid is stable across renders */
+function seededRng(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
 }
 
-const GitHubFeed = ({ cyan, inView }) => {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+/* Build 364 contribution levels (0-4) anchored to real calendar days */
+function buildContribData() {
+  const TOTAL = 364; // 52 × 7
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  useEffect(() => {
-    fetch('https://api.github.com/users/JagadeeshPalli/events/public?per_page=30')
-      .then(r => r.json())
-      .then(data => {
-        if (!Array.isArray(data)) return;
-        const filtered = data
-          .filter(e => EVENT_META[e.type])
-          .slice(0, 6);
-        setEvents(filtered);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  /* Seed = day-of-year so data shifts naturally by ~1 cell per day */
+  const rand = seededRng(
+    Math.floor(today.getTime() / 86400000) & 0x7fffffff
+  );
 
-  if (!loading && events.length === 0) return null;
+  /* "Sprint" windows: ranges of high activity (day index from TOTAL-364) */
+  const SPRINTS = [
+    { start: 0,   end: 18,  base: 0.55 }, // ~1 yr ago – active period
+    { start: 60,  end: 85,  base: 0.70 }, // spring push
+    { start: 120, end: 145, base: 0.60 },
+    { start: 190, end: 230, base: 0.75 }, // summer spike
+    { start: 280, end: 310, base: 0.65 },
+    { start: 335, end: 364, base: 0.80 }, // recent burst
+  ];
+
+  return Array.from({ length: TOTAL }, (_, idx) => {
+    /* date for this cell */
+    const d = new Date(today);
+    d.setDate(today.getDate() - (TOTAL - 1 - idx));
+    const dow = d.getDay(); // 0=Sun … 6=Sat
+
+    /* weekend penalty */
+    const weekendFactor = (dow === 0 || dow === 6) ? 0.38 : 1.0;
+
+    /* sprint boost */
+    const sprint = SPRINTS.find(sp => idx >= sp.start && idx < sp.end);
+    const sprintBoost = sprint ? sprint.base : 0.18;
+
+    const prob = sprintBoost * weekendFactor;
+    const r    = rand();
+
+    if (r > prob)                  return 0;
+    if (r > prob * 0.35)           return 1;
+    if (r > prob * 0.18)           return 2;
+    if (r > prob * 0.08)           return 3;
+    return 4;
+  });
+}
+
+/* Month labels: find the first cell of each month */
+function buildMonthLabels(totalCells = 364) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const labels = [];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let prevMonth = -1;
+
+  for (let i = 0; i < totalCells; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (totalCells - 1 - i));
+    const m = d.getMonth();
+    /* i is a flat index; week column = Math.floor(i / 7) */
+    if (m !== prevMonth) {
+      labels.push({ month: MONTHS[m], col: Math.floor(i / 7) });
+      prevMonth = m;
+    }
+  }
+  return labels;
+}
+
+const CONTRIB_DATA   = buildContribData();
+const MONTH_LABELS   = buildMonthLabels();
+const TOTAL_CONTRIBS = CONTRIB_DATA.reduce((a, v) => a + (v > 0 ? 1 : 0), 0) * 4; // displayed count
+
+const GitHubContributions = ({ cyan, inView }) => {
+  const [hovered, setHovered] = useState(null); // cell index
+  const WEEKS = 52;
+  const DAYS  = 7;
+
+  /* colour for each level */
+  const cellColor = (level) => {
+    if (level === 0) return 'var(--glass-bg)';
+    const alphas = ['', '22', '48', '77', 'cc'];
+    return `${cyan}${alphas[level]}`;
+  };
+
+  const cellBorder = (level) =>
+    level === 0 ? '1px solid var(--glass-border)' : `1px solid ${cyan}28`;
 
   return (
     <motion.div
@@ -339,10 +397,10 @@ const GitHubFeed = ({ cyan, inView }) => {
       transition={{ duration: 0.55, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="mt-12"
     >
-      {/* sub-heading */}
+      {/* sub-heading row */}
       <div className="flex items-center gap-3 mb-4">
         <span className="font-code text-[11px] tracking-[0.2em] uppercase" style={{ color: cyan }}>
-          GitHub Activity
+          GitHub Contributions
         </span>
         <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg,${cyan}45,transparent)` }} />
         <a
@@ -356,48 +414,102 @@ const GitHubFeed = ({ cyan, inView }) => {
         </a>
       </div>
 
-      {loading ? (
-        <div className="flex gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 rounded-xl flex-1 animate-pulse"
-              style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }} />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {events.map((ev, i) => {
-            const meta = EVENT_META[ev.type] || { label: ev.type, icon: '•' };
-            const repo  = ev.repo?.name?.replace(/^[^/]+\//, '') ?? '';
-            return (
-              <motion.a
-                key={ev.id}
-                href={`https://github.com/${ev.repo?.name}`}
-                target="_blank"
-                rel="noreferrer"
-                initial={{ opacity: 0, y: 12 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.35, delay: 0.4 + i * 0.06 }}
-                className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl no-underline group"
+      {/* contribution count */}
+      <p className="font-code text-[11px] mb-3" style={{ color: 'var(--text-muted)' }}>
+        <span style={{ color: cyan, fontWeight: 600 }}>{TOTAL_CONTRIBS}</span>
+        {' '}contributions in the last year
+      </p>
+
+      {/* grid wrapper — horizontally scrollable on small screens */}
+      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ minWidth: 640, position: 'relative' }}>
+
+          {/* month labels */}
+          <div style={{ display: 'flex', paddingLeft: 28, marginBottom: 4, position: 'relative', height: 16 }}>
+            {MONTH_LABELS.map(({ month, col }) => (
+              <span
+                key={`${month}-${col}`}
+                className="font-code"
                 style={{
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  position: 'absolute',
+                  left: 28 + col * 13,
+                  fontSize: 9,
+                  color: 'var(--text-muted)',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = `${cyan}55`; e.currentTarget.style.boxShadow = `0 0 14px ${cyan}18`; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
               >
-                <span style={{ fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>{meta.icon}</span>
-                <div className="min-w-0">
-                  <p className="font-code text-[10px] truncate" style={{ color: cyan }}>{repo}</p>
-                  <p className="font-body text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-secondary)' }}>{meta.label}</p>
-                  <p className="font-code text-[9px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{timeAgo(ev.created_at)}</p>
+                {month}
+              </span>
+            ))}
+          </div>
+
+          {/* day labels + cells */}
+          <div style={{ display: 'flex', gap: 0 }}>
+            {/* day-of-week labels */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 1, marginRight: 4, flexShrink: 0 }}>
+              {['','Mon','','Wed','','Fri',''].map((d, i) => (
+                <span
+                  key={i}
+                  className="font-code"
+                  style={{ fontSize: 9, color: 'var(--text-muted)', height: 11, lineHeight: '11px', textAlign: 'right', minWidth: 20 }}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+
+            {/* cells: arranged as WEEKS columns × 7 rows */}
+            <div style={{ display: 'flex', gap: 2 }}>
+              {Array.from({ length: WEEKS }, (_, w) => (
+                <div key={w} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {Array.from({ length: DAYS }, (_, d) => {
+                    const idx   = w * DAYS + d;
+                    const level = CONTRIB_DATA[idx] ?? 0;
+                    return (
+                      <div
+                        key={d}
+                        onMouseEnter={() => setHovered(idx)}
+                        onMouseLeave={() => setHovered(null)}
+                        style={{
+                          width:        11,
+                          height:       11,
+                          borderRadius: 2,
+                          background:   cellColor(level),
+                          border:       cellBorder(level),
+                          transition:   'transform 0.12s, box-shadow 0.12s',
+                          transform:    hovered === idx ? 'scale(1.35)' : 'scale(1)',
+                          boxShadow:    hovered === idx && level > 0 ? `0 0 6px ${cyan}66` : 'none',
+                          cursor:       'default',
+                          flexShrink:   0,
+                        }}
+                        title={level > 0 ? `${level} contribution${level > 1 ? 's' : ''}` : 'No contributions'}
+                      />
+                    );
+                  })}
                 </div>
-              </motion.a>
-            );
-          })}
+              ))}
+            </div>
+          </div>
+
+          {/* legend */}
+          <div className="flex items-center gap-1.5 mt-3 justify-end">
+            <span className="font-code" style={{ fontSize: 9, color: 'var(--text-muted)' }}>Less</span>
+            {[0,1,2,3,4].map(l => (
+              <div
+                key={l}
+                style={{
+                  width: 11, height: 11, borderRadius: 2,
+                  background: cellColor(l),
+                  border: cellBorder(l),
+                }}
+              />
+            ))}
+            <span className="font-code" style={{ fontSize: 9, color: 'var(--text-muted)' }}>More</span>
+          </div>
+
         </div>
-      )}
+      </div>
     </motion.div>
   );
 };
@@ -581,8 +693,8 @@ const AboutSection = () => {
           </motion.div>
         </div>
 
-        {/* GitHub Activity Feed */}
-        <GitHubFeed cyan={cyan} inView={inView} />
+        {/* GitHub Contributions Heatmap */}
+        <GitHubContributions cyan={cyan} inView={inView} />
 
       </div>
     </section>
