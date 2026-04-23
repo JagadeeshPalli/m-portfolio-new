@@ -100,10 +100,11 @@ const TerminalWidget = ({ cyan = '#00f5ff', amber = '#ff9500' }) => {
 
   /* pause/resume Lenis when terminal is open so it doesn't intercept keys */
   useEffect(() => {
-    if (!lenisRef?.current) return;
-    if (open) lenisRef.current.stop?.();
-    else      lenisRef.current.start?.();
-    return () => lenisRef.current?.start?.();
+    const lenis = lenisRef?.current;
+    if (!lenis) return;
+    if (open) lenis.stop?.();
+    else      lenis.start?.();
+    return () => lenis.start?.();
   }, [open, lenisRef]);
 
   const runCommand = useCallback((raw) => {
