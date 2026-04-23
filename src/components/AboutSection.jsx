@@ -292,6 +292,117 @@ const EarthScene = ({ isDark }) => {
 };
 
 /* ════════════════════════════════════════════════════
+   GITHUB ACTIVITY FEED
+════════════════════════════════════════════════════ */
+const EVENT_META = {
+  PushEvent:        { label: 'Pushed to',        icon: '⬆' },
+  PullRequestEvent: { label: 'Pull request in',  icon: '🔀' },
+  CreateEvent:      { label: 'Created',           icon: '✨' },
+  ReleaseEvent:     { label: 'Released in',       icon: '🚀' },
+  WatchEvent:       { label: 'Starred',           icon: '⭐' },
+  ForkEvent:        { label: 'Forked',            icon: '🍴' },
+  IssuesEvent:      { label: 'Issue in',          icon: '🔖' },
+};
+
+function timeAgo(iso) {
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400)return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+
+const GitHubFeed = ({ cyan, inView }) => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('https://api.github.com/users/JagadeeshPalli/events/public?per_page=30')
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        const filtered = data
+          .filter(e => EVENT_META[e.type])
+          .slice(0, 6);
+        setEvents(filtered);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (!loading && events.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-12"
+    >
+      {/* sub-heading */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="font-code text-[11px] tracking-[0.2em] uppercase" style={{ color: cyan }}>
+          GitHub Activity
+        </span>
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg,${cyan}45,transparent)` }} />
+        <a
+          href="https://github.com/JagadeeshPalli"
+          target="_blank"
+          rel="noreferrer"
+          className="font-code text-[10px] tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          View profile →
+        </a>
+      </div>
+
+      {loading ? (
+        <div className="flex gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-16 rounded-xl flex-1 animate-pulse"
+              style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {events.map((ev, i) => {
+            const meta = EVENT_META[ev.type] || { label: ev.type, icon: '•' };
+            const repo  = ev.repo?.name?.replace(/^[^/]+\//, '') ?? '';
+            return (
+              <motion.a
+                key={ev.id}
+                href={`https://github.com/${ev.repo?.name}`}
+                target="_blank"
+                rel="noreferrer"
+                initial={{ opacity: 0, y: 12 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.35, delay: 0.4 + i * 0.06 }}
+                className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl no-underline group"
+                style={{
+                  background: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = `${cyan}55`; e.currentTarget.style.boxShadow = `0 0 14px ${cyan}18`; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
+              >
+                <span style={{ fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>{meta.icon}</span>
+                <div className="min-w-0">
+                  <p className="font-code text-[10px] truncate" style={{ color: cyan }}>{repo}</p>
+                  <p className="font-body text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-secondary)' }}>{meta.label}</p>
+                  <p className="font-code text-[9px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{timeAgo(ev.created_at)}</p>
+                </div>
+              </motion.a>
+            );
+          })}
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+/* ════════════════════════════════════════════════════
    STAT CHIP  — GSAP count-up animation on enter
 ════════════════════════════════════════════════════ */
 const Stat = ({ value, label, color, inView }) => {
@@ -469,6 +580,10 @@ const AboutSection = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* GitHub Activity Feed */}
+        <GitHubFeed cyan={cyan} inView={inView} />
+
       </div>
     </section>
   );
