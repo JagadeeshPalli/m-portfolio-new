@@ -188,8 +188,8 @@ const HeroSection = () => {
   /* cascade: name settled → role → CTAs */
   useEffect(() => {
     if (!nameDone) return;
-    const t1 = setTimeout(() => setShowRole(true),  220);
-    const t2 = setTimeout(() => setShowCTAs(true),  700);
+    const t1 = setTimeout(() => setShowRole(true),  160);  // was 220
+    const t2 = setTimeout(() => setShowCTAs(true),  460);  // was 700
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [nameDone]);
 
@@ -229,19 +229,20 @@ const HeroSection = () => {
   );
 
   /*
-   * Scramble timing — deliberately slowed for a more dramatic reveal:
-   *   stagger  62 → 90 ms/char
-   *   duration 440 → 620 ms/char settle window
-   * JAGADEESH (9) total: 280 + 9×90 + 620 = ~1.7 s
-   * PALLI     (5) total: lastDelay + 5×90 + 620
+   * Scramble timing — snappy but still dramatic:
+   *   stagger  48 ms/char   (was 90)
+   *   duration 340 ms/char  (was 620)
+   * JAGADEESH (9): 160 + 9×48 + 340 = ~932 ms → settles ≈ 0.93 s
+   * PALLI     (5): starts at ~852 ms, settles ≈ 1.43 s
+   * Role panel visible: ~1.6 s   CTAs visible: ~1.9 s
    */
-  const SCRAMBLE_STAGGER   = 90;
-  const SCRAMBLE_DURATION  = 620;
+  const SCRAMBLE_STAGGER   = 48;
+  const SCRAMBLE_DURATION  = 340;
   const FIRST      = 'JAGADEESH';
   const LAST       = 'PALLI';
-  const firstDelay = 280;
+  const firstDelay = 160;
   const firstTotal = firstDelay + FIRST.length * SCRAMBLE_STAGGER + SCRAMBLE_DURATION;
-  const lastDelay  = firstTotal - 150; /* start LAST slightly before FIRST fully settles */
+  const lastDelay  = firstTotal - 80; /* start LAST just before FIRST finishes */
 
   return (
     <section
