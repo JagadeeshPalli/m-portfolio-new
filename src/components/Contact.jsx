@@ -4,9 +4,15 @@ import { useInView } from 'react-intersection-observer';
 import { BsGithub, BsLinkedin } from 'react-icons/bs';
 import { HiOutlineMail, HiOutlineLocationMarker } from 'react-icons/hi';
 import { MdOutlineSend } from 'react-icons/md';
-import { AiOutlineCheckCircle } from 'react-icons/ai';
+import { AiOutlineCheckCircle, AiOutlineWarning } from 'react-icons/ai';
 import { useTheme } from '../context/ThemeContext';
 import ScrambleHeading from './ScrambleHeading';
+import emailjs from '@emailjs/browser';
+
+/* ── EmailJS config ─────────────────────────────────── */
+const EJS_SERVICE  = 'service_nmyt409';
+const EJS_TEMPLATE = 'template_iyk4007';
+const EJS_KEY      = 'pucOCrnTDXuGUMH-n';
 
 /* ══════════════════════════════════════════════════════
    CONTACT INFO
@@ -47,6 +53,7 @@ const Contact = () => {
   const [form,    setForm]    = useState({ name: '', email: '', message: '' });
   const [sent,    setSent]    = useState(false);
   const [sending, setSending] = useState(false);
+  const [error,   setError]   = useState(false);
 
   /* mouse-glow state for left + right cards */
   const [glowL,  setGlowL]  = useState({ x: 50, y: 50 });
@@ -61,15 +68,32 @@ const Contact = () => {
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSending(true);
-    /* Opens default mail client pre-filled — works without a backend */
-    const subject = encodeURIComponent(`Portfolio Contact from ${form.name}`);
-    const body    = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`);
-    window.open(`mailto:palli.jagadeesh.cs2024@gmail.com?subject=${subject}&body=${body}`);
-    setTimeout(() => { setSending(false); setSent(true); }, 600);
-    setTimeout(() => { setSent(false); setForm({ name: '', email: '', message: '' }); }, 3500);
+    setError(false);
+
+    try {
+      await emailjs.send(
+        EJS_SERVICE,
+        EJS_TEMPLATE,
+        {
+          from_name: form.name,
+          reply_to:  form.email,
+          message:   form.message,
+        },
+        EJS_KEY,
+      );
+      setSent(true);
+      setForm({ name: '', email: '', message: '' });
+      setTimeout(() => setSent(false), 4000);
+    } catch (err) {
+      console.error('EmailJS error:', err);
+      setError(true);
+      setTimeout(() => setError(false), 4000);
+    } finally {
+      setSending(false);
+    }
   };
 
   const fadeUp = (delay = 0) => ({
@@ -316,26 +340,44 @@ const Contact = () => {
 
                 <motion.button
                   type="submit"
-                  disabled={sending || sent}
+                  disabled={sending || sent || error}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-body font-semibold text-sm mt-1"
                   style={{
-                    background: sent ? `${cyan}22` : `${cyan}18`,
-                    border:     `1px solid ${sent ? cyan : `${cyan}50`}`,
-                    color:       sent ? cyan : cyan,
-                    cursor:      sending ? 'wait' : 'pointer',
-                    opacity:     sending ? 0.7 : 1,
+                    background: error  ? 'rgba(255,68,68,0.12)'
+                              : sent   ? `${cyan}22`
+                              :          `${cyan}18`,
+                    border:     error  ? '1px solid rgba(255,68,68,0.5)'
+                              : sent   ? `1px solid ${cyan}`
+                              :          `1px solid ${cyan}50`,
+                    color:      error  ? '#ff6666' : cyan,
+                    cursor:     sending ? 'wait' : 'pointer',
+                    opacity:    sending ? 0.7 : 1,
                   }}
-                  whileHover={!sent && !sending ? { scale: 1.02, boxShadow: `0 0 20px ${cyan}30` } : {}}
-                  whileTap={!sent && !sending ? { scale: 0.98 } : {}}
+                  whileHover={!sent && !sending && !error ? { scale: 1.02, boxShadow: `0 0 20px ${cyan}30` } : {}}
+                  whileTap={!sent && !sending && !error ? { scale: 0.98 } : {}}
                   transition={{ duration: 0.18 }}
                 >
                   {sent ? (
                     <>
                       <AiOutlineCheckCircle size={18} />
-                      Message sent!
+                      Message sent — I'll be in touch!
+                    </>
+                  ) : error ? (
+                    <>
+                      <AiOutlineWarning size={18} />
+                      Failed to send — try emailing directly
                     </>
                   ) : sending ? (
-                    'Opening mail client…'
+                    <>
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+                        style={{ display: 'inline-block', width: 16, height: 16,
+                                 border: `2px solid ${cyan}40`,
+                                 borderTopColor: cyan, borderRadius: '50%' }}
+                      />
+                      Sending…
+                    </>
                   ) : (
                     <>
                       <MdOutlineSend size={17} />
