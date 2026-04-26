@@ -36,7 +36,7 @@ const ALL_PROJECTS = [
     image: neurovault,
     tags: ['FastAPI', 'React', 'TypeScript', 'FAISS', 'Python', 'Docker'],
     category: 'ai',
-    demo: 'https://huggingface.co/spaces/JagadeeshRony/Neurovault',
+    demo: 'https://jagadeeshrony-neurovault.hf.space',
     code: 'https://github.com/JagadeeshPalli/NeuroVault-AI',
     featured: true,
   },
@@ -65,13 +65,13 @@ const ALL_PROJECTS = [
   {
     id: 5,
     title: 'Keeper Notes',
-    desc: 'Google Keep-inspired notes app with real-time sync, label organization, and offline support using IndexedDB.',
+    desc: 'Full-stack AI-powered note-taking app with rich text editing, checklist notes, image uploads to Cloudflare R2, and Gemini 2.5 Flash features — grammar fix, summarization, smart labels, and content expansion. JWT auth with silent refresh, Redis caching, Flyway migrations, and a zero-cost free-tier cloud deployment.',
     image: keeper,
-    tags: ['React', 'Firebase', 'IndexedDB'],
-    category: 'frontend',
-    demo: 'https://github.com/JagadeeshPalli',
-    code: 'https://github.com/JagadeeshPalli',
-    featured: false,
+    tags: ['Next.js', 'TypeScript', 'Spring Boot', 'PostgreSQL', 'Redis', 'Gemini AI', 'Cloudflare R2', 'Docker', 'Tailwind CSS'],
+    category: ['fullstack', 'ai'],
+    demo: 'https://keeper-notes-theta.vercel.app/',
+    code: 'https://github.com/JagadeeshPalli/keeper-notes',
+    featured: true,
   },
   {
     id: 6,
@@ -273,7 +273,9 @@ const Projects = () => {
 
   const visible = activeTab === 'all'
     ? ALL_PROJECTS
-    : ALL_PROJECTS.filter(p => p.category === activeTab);
+    : ALL_PROJECTS.filter(p =>
+        Array.isArray(p.category) ? p.category.includes(activeTab) : p.category === activeTab
+      );
 
   return (
     <section
