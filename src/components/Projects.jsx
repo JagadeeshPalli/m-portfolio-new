@@ -75,14 +75,14 @@ const ALL_PROJECTS = [
   },
   {
     id: 6,
-    title: 'Weather Dashboard',
-    desc: 'Interactive weather dashboard with 7-day forecasts, location search, and animated weather icons using OpenWeatherMap API.',
+    title: 'WeatherWave',
+    desc: 'A production-grade, visually stunning weather dashboard featuring real-time OpenWeatherMap data, smooth framer-motion animations, glassmorphism UI, and fully responsive design across all screen sizes.',
     image: weather,
-    tags: ['React', 'REST API', 'Chart.js'],
+    tags: ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'framer-motion', 'Chart.js', 'OpenWeatherMap API'],
     category: 'frontend',
-    demo: 'https://github.com/JagadeeshPalli',
-    code: 'https://github.com/JagadeeshPalli',
-    featured: false,
+    demo: 'https://weather-dashboard-dusky-chi.vercel.app/',
+    code: 'https://github.com/JagadeeshPalli/weather-dashboard',
+    featured: true,
   },
 ];
 
